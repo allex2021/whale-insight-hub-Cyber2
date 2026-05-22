@@ -78,6 +78,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { property: "og:title", content: "Whale Intelligence Pro" },
+      { name: "twitter:title", content: "Whale Intelligence Pro" },
+      { property: "og:description", content: "Real-time whale tracking & AI trading intelligence" },
+      { name: "twitter:description", content: "Real-time whale tracking & AI trading intelligence" },
     ],
     links: [
       {

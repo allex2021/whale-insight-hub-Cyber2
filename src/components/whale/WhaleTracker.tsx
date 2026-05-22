@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Eye, Filter } from "lucide-react";
 import { Panel } from "./Panel";
-import { StateView } from "./StateView";
+import { LoadingState, ErrorState, EmptyState } from "./StateView";
 import { fetchHyperliquidWhales, type WhalePosition } from "@/lib/whale/hyperliquid.functions";
 import { cn } from "@/lib/utils";
 

@@ -51,7 +51,8 @@ export const fetchNewsServer = createServerFn({ method: "GET" }).handler(async (
   const r = await fetch("https://min-api.cryptocompare.com/data/v2/news/?lang=EN&sortOrder=latest");
   if (!r.ok) throw new Error(`cryptocompare ${r.status}`);
   const j = await r.json() as { Data?: Array<{ id: string; title: string; url: string; source: string; source_info?: { name: string }; published_on: number; upvotes?: string; downvotes?: string; categories?: string; body?: string }> };
-  const data: NewsItem[] = (j.Data ?? []).slice(0, 20).map((p) => {
+  const arr = Array.isArray(j?.Data) ? j.Data : [];
+  const data: NewsItem[] = arr.slice(0, 20).map((p) => {
     const up = parseInt(p.upvotes ?? "0", 10);
     const down = parseInt(p.downvotes ?? "0", 10);
     const net = up - down;

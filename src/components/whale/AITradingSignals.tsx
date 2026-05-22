@@ -9,7 +9,7 @@ import { generateAISignal, fetchLatestSignals } from "@/lib/whale/ai.functions";
 import { useBinanceWhaleStream } from "@/hooks/useBinanceWhaleStream";
 import { cn } from "@/lib/utils";
 
-type Asset = "BTC" | "ETH" | "SOL";
+type Asset = "BTC" | "ETH" | "SOL" | "LTC";
 
 export function AITradingSignals() {
   const qc = useQueryClient();
@@ -56,7 +56,7 @@ export function AITradingSignals() {
   useEffect(() => {
     if (!data) return;
     const have = new Set(data.signals.map((s) => s.asset));
-    const missing = (["BTC", "ETH", "SOL"] as Asset[]).filter((a) => !have.has(a) && latestPrices[a]);
+    const missing = (["BTC", "ETH", "SOL", "LTC"] as Asset[]).filter((a) => !have.has(a) && latestPrices[a]);
     if (missing.length > 0 && !mut.isPending) {
       mut.mutate(missing[0]);
     }
@@ -72,7 +72,7 @@ export function AITradingSignals() {
       accent="purple"
       action={
         <div className="flex items-center gap-2">
-          {(["BTC", "ETH", "SOL"] as Asset[]).map((a) => (
+          {(["BTC", "ETH", "SOL", "LTC"] as Asset[]).map((a) => (
             <button
               key={a}
               disabled={mut.isPending || !latestPrices[a]}

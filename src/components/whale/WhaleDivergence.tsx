@@ -30,7 +30,7 @@ export function WhaleDivergence() {
         if (t.side === "BUY") smart[t.asset].buy += Number(t.size_usd);
         else smart[t.asset].sell += Number(t.size_usd);
       }
-      const symbols = ["BTC", "ETH", "SOL"];
+      const symbols = ["BTC", "ETH", "SOL", "LTC"];
       try {
         const retail = await Promise.all(symbols.map(async (s) => {
           const r = await fetch(`https://fapi.binance.com/futures/data/takerlongshortRatio?symbol=${s}USDT&period=1h&limit=1`);

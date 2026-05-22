@@ -11,9 +11,9 @@ async function jget(url: string, signal?: AbortSignal, init?: RequestInit) {
 
 // ============ PRICES ============
 export async function fetchPrices(signal?: AbortSignal): Promise<PriceTick[]> {
-  const url = `https://api.binance.com/api/v3/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(["BTCUSDT","ETHUSDT","SOLUSDT"]))}`;
+  const url = `https://api.binance.com/api/v3/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(["BTCUSDT","ETHUSDT","SOLUSDT","LTCUSDT"]))}`;
   const arr = await jget(url, signal) as Array<{ symbol: string; lastPrice: string; priceChangePercent: string }>;
-  const map: Record<string, Symbol> = { BTCUSDT: "BTC", ETHUSDT: "ETH", SOLUSDT: "SOL" };
+  const map: Record<string, Symbol> = { BTCUSDT: "BTC", ETHUSDT: "ETH", SOLUSDT: "SOL", LTCUSDT: "LTC" };
   return arr.map((d) => ({
     symbol: map[d.symbol],
     price: parseFloat(d.lastPrice),
@@ -38,7 +38,7 @@ export async function fetchGlobals(signal?: AbortSignal): Promise<MarketGlobals>
 }
 
 // ============ FUNDING (Binance + Bybit + OKX) ============
-const SYMBOLS: Symbol[] = ["BTC", "ETH", "SOL"];
+const SYMBOLS: Symbol[] = ["BTC", "ETH", "SOL", "LTC"];
 
 async function binanceFunding(sym: Symbol, signal?: AbortSignal) {
   const j = await jget(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${sym}USDT`, signal);

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Activity } from "lucide-react";
+import { Activity, LogOut, Settings as SettingsIcon } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchMarketGlobals } from "@/lib/whale/market.functions";
 import { useBinancePriceStream } from "@/hooks/useBinanceWhaleStream";
 import { fmtPct, fmtUSD } from "@/lib/whale/format";
+import { supabase } from "@/integrations/supabase/client";
 
 function fgColor(v: number) {
   if (v >= 75) return "text-bull";

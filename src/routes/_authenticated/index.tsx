@@ -11,6 +11,7 @@ import { WhaleDivergence } from "@/components/whale/WhaleDivergence";
 import { InterMarketCorrelation } from "@/components/whale/InterMarketCorrelation";
 import { AITradingSignals } from "@/components/whale/AITradingSignals";
 import { AlertCenter } from "@/components/whale/AlertCenter";
+import { LongShortRatio } from "@/components/whale/LongShortRatio";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -38,6 +39,9 @@ function Dashboard() {
       <HeaderBar />
       <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-6 lg:px-8">
         <WhaleTracker />
+
+        <LongShortRatio />
+
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <LiquidationHeatmap />

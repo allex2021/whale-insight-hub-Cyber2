@@ -103,6 +103,16 @@ export function HeaderBar() {
             <Activity className="h-3 w-3 text-bull" />
             <span className="text-muted-foreground hidden sm:inline">{updated}</span>
           </div>
+          <Link to="/settings" title="Settings"
+            className="rounded-md border border-border bg-secondary p-1.5 hover:border-border-bright">
+            <SettingsIcon className="h-3.5 w-3.5" />
+          </Link>
+          {email && (
+            <button onClick={logout} title={`Sign out (${email})`}
+              className="rounded-md border border-border bg-secondary p-1.5 hover:border-bear/40 hover:text-bear">
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </header>

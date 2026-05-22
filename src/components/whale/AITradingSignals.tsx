@@ -9,7 +9,7 @@ import { generateAISignal, fetchLatestSignals } from "@/lib/whale/ai.functions";
 import { useBinanceWhaleStream } from "@/hooks/useBinanceWhaleStream";
 import { cn } from "@/lib/utils";
 
-type Asset = "BTC" | "ETH" | "SOL";
+type Asset = "BTC" | "ETH" | "SOL" | "LTC";
 
 export function AITradingSignals() {
   const qc = useQueryClient();

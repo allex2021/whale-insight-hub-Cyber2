@@ -1,200 +1,167 @@
 import { useMemo, useState } from "react";
-import { ArrowDownRight, ArrowUpRight, Radio, Search, ShieldAlert } from "lucide-react";
-import { Panel, Chip } from "./Panel";
-import { fmtUSD, timeAgo } from "@/lib/whale/format";
-import { useBinanceWhaleStream, type WhaleTrade } from "@/hooks/useBinanceWhaleStream";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, Eye, Filter } from "lucide-react";
+import { Panel } from "./Panel";
+import { LoadingState, ErrorState, EmptyState } from "./StateView";
+import { fetchHyperliquidWhales, type WhalePosition } from "@/lib/whale/hyperliquid.functions";
 import { cn } from "@/lib/utils";
 
-type Tab = "ALL" | "BUYS" | "SELLS" | "MEGA";
-type SymbolFilter = "ALL" | "BTC" | "ETH" | "SOL";
+type SideFilter = "ALL" | "LONG" | "SHORT";
 
-const tierFor = (size: number) =>
-  size >= 5_000_000 ? { icon: "🐋", label: "MEGA" }
-  : size >= 1_000_000 ? { icon: "🦈", label: "SHARK" }
-  : { icon: "🐟", label: "FISH" };
+function ScoreBadge({ score }: { score: number }) {
+  const color =
+    score >= 85 ? "bg-bull/20 text-bull border-bull/40"
+    : score >= 70 ? "bg-[var(--neon-yellow)]/20 text-[var(--neon-yellow)] border-[var(--neon-yellow)]/40"
+    : score >= 50 ? "bg-[var(--neon-orange)]/20 text-[var(--neon-orange)] border-[var(--neon-orange)]/40"
+    : "bg-bear/20 text-bear border-bear/40";
+  return (
+    <span className={cn("inline-block min-w-[28px] rounded border px-1.5 py-0.5 text-center font-mono text-[11px] font-bold", color)}>
+      {score}
+    </span>
+  );
+}
+
+function fmtCompactUsd(n: number) {
+  if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(2)}M`;
+  if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
+  return `$${n.toFixed(0)}`;
+}
+
+function fmtPrice(n: number) {
+  return n >= 1000 ? n.toLocaleString("en-US", { maximumFractionDigits: 2 }) : n.toFixed(4);
+}
 
 export function WhaleTracker() {
-  const [minUsd, setMinUsd] = useState(100_000);
-  const { trades, connected } = useBinanceWhaleStream(minUsd, 150);
-  const [tab, setTab] = useState<Tab>("ALL");
-  const [sym, setSym] = useState<SymbolFilter>("ALL");
+  const fetchFn = useServerFn(fetchHyperliquidWhales);
+  const { data, error, isLoading, refetch } = useQuery({
+    queryKey: ["hl-whales"],
+    queryFn: () => fetchFn(),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+  const [sideFilter, setSideFilter] = useState<SideFilter>("ALL");
 
   const filtered = useMemo(() => {
-    return trades.filter((t) => {
-      if (sym !== "ALL" && t.asset !== sym) return false;
-      if (tab === "BUYS") return t.side === "BUY";
-      if (tab === "SELLS") return t.side === "SELL";
-      if (tab === "MEGA") return t.sizeUsd >= 5_000_000;
-      return true;
-    });
-  }, [trades, tab, sym]);
-
-  // Cascade detection: 3+ mega trades in same direction within 60s
-  const cascade = useMemo(() => {
-    const recent = filtered.filter((t) => t.sizeUsd >= 1_000_000 && Date.now() - t.tradeTime < 60_000);
-    const buys = recent.filter((t) => t.side === "BUY");
-    const sells = recent.filter((t) => t.side === "SELL");
-    if (buys.length >= 3) return { side: "BUY" as const, count: buys.length, total: buys.reduce((s, t) => s + t.sizeUsd, 0) };
-    if (sells.length >= 3) return { side: "SELL" as const, count: sells.length, total: sells.reduce((s, t) => s + t.sizeUsd, 0) };
-    return null;
-  }, [filtered]);
-
-  const summary = useMemo(() => {
-    const oneHourAgo = Date.now() - 60 * 60_000;
-    const recent = trades.filter((t) => t.tradeTime > oneHourAgo);
-    const buyVol = recent.filter((t) => t.side === "BUY").reduce((s, t) => s + t.sizeUsd, 0);
-    const sellVol = recent.filter((t) => t.side === "SELL").reduce((s, t) => s + t.sizeUsd, 0);
-    const biggest = [...recent].sort((a, b) => b.sizeUsd - a.sizeUsd)[0];
-    return { buyVol, sellVol, biggest, bias: buyVol >= sellVol ? "BUY" : "SELL" as const };
-  }, [trades]);
-
-  const tabs: Array<{ key: Tab; label: string }> = [
-    { key: "ALL", label: "All Trades" },
-    { key: "BUYS", label: "Buys" },
-    { key: "SELLS", label: "Sells" },
-    { key: "MEGA", label: "🐋 Mega ≥$5M" },
-  ];
+    if (!data) return [];
+    return data.filter((w) => sideFilter === "ALL" || w.side === sideFilter);
+  }, [data, sideFilter]);
 
   return (
     <Panel
-      title="Live Whale Trades"
-      subtitle="Real-time aggregated trades from Binance · WebSocket stream"
-      accent="purple"
+      title="Whale Tracker"
+      subtitle={`${filtered.length} live Hyperliquid positions · top traders by 24h volume`}
+      accent="blue"
       action={
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 rounded-md border border-border bg-secondary/60 px-2 py-1">
-            <Radio className={cn("h-3 w-3", connected ? "text-bull pulse-dot" : "text-bear")} />
-            <span className="text-[10px] uppercase font-bold tracking-wider">{connected ? "Live" : "Reconnecting"}</span>
-          </div>
-          <select
-            value={sym}
-            onChange={(e) => setSym(e.target.value as SymbolFilter)}
-            className="rounded-md border border-border bg-secondary px-2 py-1 text-xs font-mono"
-          >
-            <option value="ALL">All</option>
-            <option value="BTC">BTC</option>
-            <option value="ETH">ETH</option>
-            <option value="SOL">SOL</option>
-          </select>
-          <select
-            value={minUsd}
-            onChange={(e) => setMinUsd(Number(e.target.value))}
-            className="rounded-md border border-border bg-secondary px-2 py-1 text-xs font-mono"
-          >
-            <option value={100_000}>≥ $100K</option>
-            <option value={500_000}>≥ $500K</option>
-            <option value={1_000_000}>≥ $1M</option>
-            <option value={5_000_000}>≥ $5M</option>
-          </select>
+        <div className="flex items-center gap-2">
+          <Filter className="h-3 w-3 text-muted-foreground" />
+          {(["ALL", "LONG", "SHORT"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setSideFilter(f)}
+              className={cn(
+                "rounded px-2 py-0.5 font-mono text-[10px] transition-colors",
+                sideFilter === f
+                  ? "bg-[var(--neon-blue)]/20 text-[var(--neon-blue)]"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {f}
+            </button>
+          ))}
         </div>
       }
     >
-      {/* Tabs */}
-      <div className="mb-4 flex flex-wrap gap-1.5">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={cn(
-              "rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors",
-              tab === t.key
-                ? "border-[var(--neon-purple)] bg-[var(--neon-purple)]/15 text-[var(--neon-purple)]"
-                : "border-border bg-secondary/50 text-muted-foreground hover:border-border-bright hover:text-foreground",
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {isLoading && !data && <LoadingState label="Fetching live whale positions from Hyperliquid…" />}
+      {error && !data && <ErrorState error={String(error)} onRetry={() => refetch()} />}
+      {data && filtered.length === 0 && <EmptyState label="No positions match the current filter." />}
 
-      {/* Cascade banner */}
-      {cascade && (
-        <div className={cn(
-          "mb-4 flex items-center gap-3 rounded-lg border px-4 py-3 row-danger",
-          cascade.side === "BUY" ? "border-bull/60 bg-bull/10" : "border-bear/60 bg-bear/10",
-        )}>
-          <ShieldAlert className={cn("h-5 w-5", cascade.side === "BUY" ? "text-bull" : "text-bear")} />
-          <div className="flex-1">
-            <div className={cn("text-sm font-bold", cascade.side === "BUY" ? "text-bull" : "text-bear")}>
-              ⚡ WHALE CASCADE — {cascade.side}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {cascade.count} large {cascade.side === "BUY" ? "buys" : "sells"} (≥$1M) within 60s · total {fmtUSD(cascade.total)}
-            </div>
-          </div>
+      {data && filtered.length > 0 && (
+        <div className="overflow-x-auto -mx-4">
+          <table className="w-full min-w-[1000px] text-xs">
+            <thead>
+              <tr className="border-b border-border text-[10px] uppercase tracking-wide text-muted-foreground">
+                <th className="px-3 py-2 text-left font-medium">Wallet</th>
+                <th className="px-3 py-2 text-left font-medium">Coin</th>
+                <th className="px-3 py-2 text-left font-medium">Side</th>
+                <th className="px-3 py-2 text-right font-medium">Size</th>
+                <th className="px-3 py-2 text-right font-medium">Lev</th>
+                <th className="px-3 py-2 text-right font-medium">Entry</th>
+                <th className="px-3 py-2 text-right font-medium">Current</th>
+                <th className="px-3 py-2 text-right font-medium">PnL</th>
+                <th className="px-3 py-2 text-right font-medium">Liq Price</th>
+                <th className="px-3 py-2 text-center font-medium">Score</th>
+                <th className="px-3 py-2 text-center font-medium">AI</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((w) => {
+                const profitable = w.unrealizedPnl >= 0;
+                const liqClose = w.liqDistancePct !== null && w.liqDistancePct < 5;
+                return (
+                  <tr key={w.address} className="border-b border-border/40 transition-colors hover:bg-card-hover">
+                    <td className="px-3 py-2.5">
+                      <div className="flex flex-col">
+                        <a
+                          href={`https://hyperdash.com/trader/${w.address}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-semibold text-foreground hover:text-[var(--neon-blue)]"
+                        >
+                          {w.alias}
+                        </a>
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {w.address.slice(0, 6)}…{w.address.slice(-4)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5 font-mono font-bold">{w.coin}</td>
+                    <td className="px-3 py-2.5">
+                      <span className={cn("inline-flex items-center gap-1 font-mono text-[11px] font-bold", w.side === "LONG" ? "text-bull" : "text-bear")}>
+                        {w.side === "LONG" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                        {w.side}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-mono">{fmtCompactUsd(w.sizeUsd)}</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-[var(--neon-yellow)]">{w.leverage}x</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">${fmtPrice(w.entry)}</td>
+                    <td className="px-3 py-2.5 text-right font-mono">${fmtPrice(w.current)}</td>
+                    <td className="px-3 py-2.5 text-right font-mono">
+                      <span className={cn("font-bold", profitable ? "text-bull" : "text-bear")}>
+                        {profitable ? "+" : ""}{fmtCompactUsd(Math.abs(w.unrealizedPnl)).replace("$", profitable ? "$" : "-$")}
+                      </span>
+                      <span className="ml-1 text-[10px] opacity-60">({profitable ? "+" : ""}{w.pnlPct.toFixed(1)}%)</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-mono">
+                      {w.liqPrice ? (
+                        <span className={cn("inline-flex items-center justify-end gap-1", liqClose ? "text-bear animate-pulse" : "text-muted-foreground")}>
+                          {liqClose && <AlertTriangle className="h-3 w-3" />}
+                          ${fmtPrice(w.liqPrice)}
+                          {w.liqDistancePct !== null && <span className="text-[10px] opacity-60">({w.liqDistancePct.toFixed(1)}%)</span>}
+                        </span>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="px-3 py-2.5 text-center"><ScoreBadge score={w.smartScore} /></td>
+                    <td className="px-3 py-2.5 text-center">
+                      <a
+                        href={`https://hyperdash.com/trader/${w.address}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded border border-[var(--neon-purple)]/40 bg-[var(--neon-purple)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--neon-purple)] transition-colors hover:bg-[var(--neon-purple)]/20"
+                      >
+                        <Eye className="h-3 w-3" /> View
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
-
-      {/* Hourly summary */}
-      <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4 font-mono text-xs">
-        <Stat label="Buy Volume (1h)" value={fmtUSD(summary.buyVol)} tone="bull" />
-        <Stat label="Sell Volume (1h)" value={fmtUSD(summary.sellVol)} tone="bear" />
-        <Stat label="Net Bias" value={summary.bias} tone={summary.bias === "BUY" ? "bull" : "bear"} />
-        <Stat label="Biggest" value={summary.biggest ? fmtUSD(summary.biggest.sizeUsd) : "—"} />
-      </div>
-
-      <div className="overflow-x-auto scrollbar-thin">
-        <table className="w-full text-xs font-mono min-w-[640px]">
-          <thead className="border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-2 py-2 text-left">Time</th>
-              <th className="px-2 py-2 text-left">Tier</th>
-              <th className="px-2 py-2 text-left">Asset</th>
-              <th className="px-2 py-2 text-left">Side</th>
-              <th className="px-2 py-2 text-right">Size</th>
-              <th className="px-2 py-2 text-right">Price</th>
-              <th className="px-2 py-2 text-right">Qty</th>
-              <th className="px-2 py-2 text-left">Exchange</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((t) => <TradeRow key={t.id} t={t} />)}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={8} className="py-10 text-center text-muted-foreground">
-                  <Search className="mx-auto h-6 w-6 opacity-50" />
-                  <div className="mt-2">
-                    {connected ? "Waiting for whale activity above threshold…" : "Connecting to Binance stream…"}
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
     </Panel>
   );
 }
 
-function TradeRow({ t }: { t: WhaleTrade }) {
-  const tier = tierFor(t.sizeUsd);
-  const mega = t.sizeUsd >= 5_000_000;
-  return (
-    <tr className={cn(
-      "border-b border-border/60 transition-colors hover:bg-card-hover",
-      mega && "row-warn",
-    )}>
-      <td className="px-2 py-2 text-muted-foreground">{timeAgo(t.tradeTime)}</td>
-      <td className="px-2 py-2"><span className="text-base" title={tier.label}>{tier.icon}</span></td>
-      <td className="px-2 py-2 font-bold">{t.asset}</td>
-      <td className="px-2 py-2">
-        {t.side === "BUY"
-          ? <Chip tone="bull"><ArrowUpRight className="h-3 w-3" />BUY</Chip>
-          : <Chip tone="bear"><ArrowDownRight className="h-3 w-3" />SELL</Chip>}
-      </td>
-      <td className="px-2 py-2 text-right font-semibold">{fmtUSD(t.sizeUsd)}</td>
-      <td className="px-2 py-2 text-right">${t.price.toLocaleString("en-US", { maximumFractionDigits: 2 })}</td>
-      <td className="px-2 py-2 text-right text-muted-foreground">{t.quantity.toFixed(4)}</td>
-      <td className="px-2 py-2 text-muted-foreground uppercase">{t.exchange}</td>
-    </tr>
-  );
-}
-
-function Stat({ label, value, tone }: { label: string; value: string | number; tone?: "bull" | "bear" }) {
-  return (
-    <div className="rounded-md border border-border bg-secondary/40 p-2">
-      <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
-      <div className={cn("text-sm font-bold mt-0.5", tone === "bull" && "text-bull", tone === "bear" && "text-bear")}>{value}</div>
-    </div>
-  );
-}
+export type { WhalePosition };

@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Panel, Chip, Bar } from "./Panel";
 import type { Symbol } from "@/lib/whale/types";
 import { fmtPct, fmtUSD } from "@/lib/whale/format";
 import { useAsync } from "@/lib/whale/useAsync";
-import { fetchExchangeSignals } from "@/lib/whale/services";
+import { fetchExchangeSignalsServer } from "@/lib/whale/market.functions";
 import { ErrorState, LoadingState } from "./StateView";
 
 export function CrossExchangeSignal() {
   const [sym, setSym] = useState<Symbol>("BTC");
-  const fetcher = useMemo(() => (s: AbortSignal) => fetchExchangeSignals(sym, s), [sym]);
+  const fn = useServerFn(fetchExchangeSignalsServer);
+  const fetcher = useMemo(() => (_s: AbortSignal) => fn({ data: { symbol: sym } }), [fn, sym]);
   const { data: rows, error, loading, retry } = useAsync(fetcher, [sym], { refreshMs: 60_000 });
 
   const sameDir = rows && rows.every((r) => r.direction === rows[0].direction);

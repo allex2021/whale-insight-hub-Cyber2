@@ -80,7 +80,7 @@ export function HeaderBar() {
             <span className="h-2 w-2 rounded-full bg-bull pulse-dot" />
             <span className="text-bull text-[10px] font-bold uppercase">Live</span>
             <Activity className="h-3 w-3 text-bull" />
-            <span className="text-muted-foreground">{updated.toLocaleTimeString()}</span>
+            <span className="text-muted-foreground">{updated}</span>
           </div>
         </div>
       </div>

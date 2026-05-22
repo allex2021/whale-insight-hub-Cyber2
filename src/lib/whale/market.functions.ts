@@ -43,58 +43,50 @@ export const fetchMarketGlobals = createServerFn({ method: "GET" }).handler(asyn
   return result;
 });
 
-// ============ NEWS (CryptoCompare free API — no auth required) ============
+// ============ NEWS (CoinDesk Data API — no auth required) ============
 let newsCache: { at: number; data: NewsItem[] } | null = null;
 
-type CryptoCompareNewsPayload = {
-  Data?: unknown;
+type CoinDeskNewsRow = {
+  ID?: number;
+  TITLE?: string;
+  URL?: string;
+  PUBLISHED_ON?: number;
+  BODY?: string;
+  UPVOTES?: number;
+  DOWNVOTES?: number;
+  SENTIMENT?: "POSITIVE" | "NEGATIVE" | "NEUTRAL" | string;
+  SOURCE_DATA?: { NAME?: string };
+  KEYWORDS?: string;
 };
-
-type CryptoCompareNewsRow = {
-  id?: string | number;
-  title?: string;
-  url?: string;
-  source?: string;
-  source_info?: { name?: string };
-  published_on?: number;
-  upvotes?: string | number;
-  downvotes?: string | number;
-  categories?: string;
-  body?: string;
-};
-
-function getNewsRows(payload: CryptoCompareNewsPayload): CryptoCompareNewsRow[] {
-  if (Array.isArray(payload?.Data)) return payload.Data as CryptoCompareNewsRow[];
-  if (payload?.Data && typeof payload.Data === "object") {
-    return Object.values(payload.Data as Record<string, CryptoCompareNewsRow>).filter(Boolean);
-  }
-  return [];
-}
 
 export const fetchNewsServer = createServerFn({ method: "GET" }).handler(async (): Promise<NewsItem[]> => {
   if (newsCache && Date.now() - newsCache.at < 60_000) return newsCache.data;
   try {
-    const r = await fetch("https://min-api.cryptocompare.com/data/v2/news/?lang=EN&sortOrder=latest");
-    if (!r.ok) throw new Error(`cryptocompare ${r.status}`);
-    const j = (await r.json()) as CryptoCompareNewsPayload;
-    const rows = getNewsRows(j);
+    const r = await fetch("https://data-api.coindesk.com/news/v1/article/list?lang=EN&limit=20");
+    if (!r.ok) throw new Error(`coindesk ${r.status}`);
+    const j = (await r.json()) as { Data?: CoinDeskNewsRow[] };
+    const rows = Array.isArray(j?.Data) ? j.Data : [];
     const data: NewsItem[] = rows.slice(0, 20).map((p, index) => {
-      const up = parseInt(String(p.upvotes ?? "0"), 10);
-      const down = parseInt(String(p.downvotes ?? "0"), 10);
-    const net = up - down;
-      const title = (p.title ?? "Untitled").toLowerCase();
+      const up = Number(p.UPVOTES ?? 0);
+      const down = Number(p.DOWNVOTES ?? 0);
+      const net = up - down;
+      const title = (p.TITLE ?? "Untitled").toLowerCase();
       const bullishKw = /(surge|rally|soar|gain|bullish|jump|breakout|approve|adopt|all-time)/i.test(title);
       const bearishKw = /(crash|plunge|drop|bearish|sell-off|hack|ban|sue|liquidat|reject)/i.test(title);
-      const verdict: "BULLISH" | "BEARISH" | "NEUTRAL" = bullishKw && !bearishKw ? "BULLISH" : bearishKw && !bullishKw ? "BEARISH" : net > 0 ? "BULLISH" : net < 0 ? "BEARISH" : "NEUTRAL";
+      const sentiment = String(p.SENTIMENT ?? "").toUpperCase();
+      const verdict: "BULLISH" | "BEARISH" | "NEUTRAL" =
+        sentiment === "POSITIVE" || (bullishKw && !bearishKw) ? "BULLISH" :
+        sentiment === "NEGATIVE" || (bearishKw && !bullishKw) ? "BEARISH" :
+        net > 0 ? "BULLISH" : net < 0 ? "BEARISH" : "NEUTRAL";
       const score = Math.min(10, Math.max(1, Math.round(5 + (bullishKw ? 2 : 0) - (bearishKw ? 2 : 0) + Math.sign(net))));
       const impact: "HIGH" | "MEDIUM" | "LOW" = score >= 8 ? "HIGH" : score >= 5 ? "MEDIUM" : "LOW";
       return {
-        id: String(p.id ?? index),
-        source: p.source_info?.name ?? p.source ?? "CryptoCompare",
-        title: p.title ?? "Untitled",
-        url: p.url ?? "#",
-        publishedAt: (p.published_on ?? Math.floor(Date.now() / 1000)) * 1000,
-        ai: { score, verdict, impact, summary: (p.body ?? "").slice(0, 140) || `Categories: ${p.categories ?? "general"}` },
+        id: String(p.ID ?? index),
+        source: p.SOURCE_DATA?.NAME ?? "CoinDesk",
+        title: p.TITLE ?? "Untitled",
+        url: p.URL ?? "#",
+        publishedAt: (p.PUBLISHED_ON ?? Math.floor(Date.now() / 1000)) * 1000,
+        ai: { score, verdict, impact, summary: (p.BODY ?? "").slice(0, 140) || `Keywords: ${p.KEYWORDS ?? "general"}` },
       };
     });
     newsCache = { at: Date.now(), data };

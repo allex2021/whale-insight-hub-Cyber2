@@ -37,7 +37,7 @@ export function HeaderBar() {
     setUpdated(new Date().toLocaleTimeString());
   }, [prices]);
 
-  const symbols: Array<"BTC" | "ETH" | "SOL"> = ["BTC", "ETH", "SOL"];
+  const symbols: Array<"BTC" | "ETH" | "SOL" | "LTC"> = ["BTC", "ETH", "SOL", "LTC"];
 
   const logout = async () => {
     await supabase.auth.signOut();

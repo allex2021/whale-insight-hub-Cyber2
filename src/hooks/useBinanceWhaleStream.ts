@@ -95,7 +95,7 @@ export function useBinancePriceStream() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const ws = new WebSocket(
-      "wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/ethusdt@ticker/solusdt@ticker",
+      "wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/ethusdt@ticker/solusdt@ticker/ltcusdt@ticker",
     );
     ws.onmessage = (ev) => {
       try {

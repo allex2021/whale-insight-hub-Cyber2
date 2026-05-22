@@ -15,7 +15,7 @@ function fgColor(v: number) {
 export function HeaderBar() {
   const [prices, setPrices] = useState<PriceTick[]>([]);
   const [globals, setGlobals] = useState<MarketGlobals | null>(null);
-  const [updated, setUpdated] = useState<Date>(new Date());
+  const [updated, setUpdated] = useState<string>("--:--:--");
 
   useEffect(() => {
     const ctl = new AbortController();
@@ -23,7 +23,7 @@ export function HeaderBar() {
     const load = async () => {
       const [p, g] = await Promise.all([fetchPrices(ctl.signal), fetchGlobals(ctl.signal)]);
       if (!mounted) return;
-      setPrices(p); setGlobals(g); setUpdated(new Date());
+      setPrices(p); setGlobals(g); setUpdated(new Date().toLocaleTimeString());
     };
     load();
     const id = setInterval(load, 30_000);
@@ -80,7 +80,7 @@ export function HeaderBar() {
             <span className="h-2 w-2 rounded-full bg-bull pulse-dot" />
             <span className="text-bull text-[10px] font-bold uppercase">Live</span>
             <Activity className="h-3 w-3 text-bull" />
-            <span className="text-muted-foreground">{updated.toLocaleTimeString()}</span>
+            <span className="text-muted-foreground">{updated}</span>
           </div>
         </div>
       </div>

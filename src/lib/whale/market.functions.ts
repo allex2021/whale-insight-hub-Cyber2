@@ -17,30 +17,26 @@ export type MarketGlobalsDTO = {
 export const fetchMarketGlobals = createServerFn({ method: "GET" }).handler(async (): Promise<MarketGlobalsDTO> => {
   if (cache && Date.now() - cache.at < 60_000) return cache.data;
 
-  let fearGreed = { value: 50, label: "Neutral" };
-  let marketCap = 0;
-  let btcDominance = 0;
-  let totalVolume = 0;
+  const [fngRes, cgRes] = await Promise.all([
+    fetch("https://api.alternative.me/fng/?limit=1"),
+    fetch("https://api.coingecko.com/api/v3/global"),
+  ]);
+  if (!fngRes.ok) throw new Error(`alternative.me ${fngRes.status}`);
+  if (!cgRes.ok) throw new Error(`coingecko ${cgRes.status}`);
 
-  try {
-    const r = await fetch("https://api.alternative.me/fng/?limit=1");
-    const j = (await r.json()) as { data?: Array<{ value: string; value_classification: string }> };
-    const v = parseInt(j.data?.[0]?.value ?? "0", 10);
-    if (v) fearGreed = { value: v, label: j.data![0].value_classification };
-  } catch { /* keep default */ }
+  const fng = (await fngRes.json()) as { data?: Array<{ value: string; value_classification: string }> };
+  const cg = (await cgRes.json()) as { data?: { total_market_cap?: { usd?: number }; total_volume?: { usd?: number }; market_cap_percentage?: { btc?: number } } };
 
-  try {
-    const r = await fetch("https://api.coingecko.com/api/v3/global");
-    const j = (await r.json()) as { data?: { total_market_cap?: { usd?: number }; total_volume?: { usd?: number }; market_cap_percentage?: { btc?: number } } };
-    const d = j.data;
-    if (d) {
-      marketCap = d.total_market_cap?.usd ?? 0;
-      btcDominance = d.market_cap_percentage?.btc ?? 0;
-      totalVolume = d.total_volume?.usd ?? 0;
-    }
-  } catch { /* keep default */ }
+  const fngEntry = fng.data?.[0];
+  const d = cg.data;
+  if (!fngEntry || !d) throw new Error("Empty payload from upstream");
 
-  const result = { fearGreed, marketCap, btcDominance, totalVolume };
+  const result: MarketGlobalsDTO = {
+    fearGreed: { value: parseInt(fngEntry.value, 10), label: fngEntry.value_classification },
+    marketCap: d.total_market_cap?.usd ?? 0,
+    btcDominance: d.market_cap_percentage?.btc ?? 0,
+    totalVolume: d.total_volume?.usd ?? 0,
+  };
   cache = { at: Date.now(), data: result };
   return result;
 });

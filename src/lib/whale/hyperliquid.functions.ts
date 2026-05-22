@@ -165,7 +165,7 @@ export const fetchHyperliquidWhales = createServerFn({ method: "GET" }).handler(
         liqDistancePct,
         smartScore,
       });
-      if (rows.length >= 12) break;
+      if (rows.length >= 40) break;
     }
 
     cache = { at: Date.now(), data: rows };

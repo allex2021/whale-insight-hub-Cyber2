@@ -64,7 +64,7 @@ function Dashboard() {
 
         <footer className="border-t border-border pt-6 pb-10 text-center text-xs text-muted-foreground">
           🐋 <span className="font-bold text-foreground">Whale Intelligence Pro</span> · Powered by <span className="text-[var(--neon-purple)] font-semibold">Allex@Cyber2</span>
-          <div className="mt-1 opacity-60">Data: Binance · CoinGecko · Alternative.me · Mock fallbacks for restricted endpoints</div>
+          <div className="mt-1 opacity-60">Live: Binance WebSocket · CoinGecko · Alternative.me · AI via Lovable Gateway (Gemini)</div>
         </footer>
       </main>
     </div>

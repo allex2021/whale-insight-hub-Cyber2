@@ -145,7 +145,7 @@ export function WhaleTracker() {
                     <td className="px-3 py-2.5 text-center"><ScoreBadge score={w.smartScore} /></td>
                     <td className="px-3 py-2.5 text-center">
                       <a
-                        href={`https://hyperdash.com/trader/${w.address}`}
+                        href={`https://hypurrscan.io/address/${w.address}`}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 rounded border border-[var(--neon-purple)]/40 bg-[var(--neon-purple)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--neon-purple)] transition-colors hover:bg-[var(--neon-purple)]/20"

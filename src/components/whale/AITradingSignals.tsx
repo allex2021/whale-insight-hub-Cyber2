@@ -72,7 +72,7 @@ export function AITradingSignals() {
       accent="purple"
       action={
         <div className="flex items-center gap-2">
-          {(["BTC", "ETH", "SOL"] as Asset[]).map((a) => (
+          {(["BTC", "ETH", "SOL", "LTC"] as Asset[]).map((a) => (
             <button
               key={a}
               disabled={mut.isPending || !latestPrices[a]}

@@ -11,6 +11,7 @@ import { WhaleDivergence } from "@/components/whale/WhaleDivergence";
 import { InterMarketCorrelation } from "@/components/whale/InterMarketCorrelation";
 import { AITradingSignals } from "@/components/whale/AITradingSignals";
 import { AlertCenter } from "@/components/whale/AlertCenter";
+import { LongShortRatio } from "@/components/whale/LongShortRatio";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({

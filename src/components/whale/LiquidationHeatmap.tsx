@@ -1,11 +1,12 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bar as RBar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Panel, Chip } from "./Panel";
 import { buildMockLiqHeatmap } from "@/lib/whale/mock";
 import { fmtUSD } from "@/lib/whale/format";
 
 export function LiquidationHeatmap() {
-  const data = useMemo(() => buildMockLiqHeatmap(), []);
+  const [data, setData] = useState<ReturnType<typeof buildMockLiqHeatmap>>([]);
+  useEffect(() => { setData(buildMockLiqHeatmap()); }, []);
   const current = 97_850;
   const totals = useMemo(() => {
     const longs = data.reduce((s, d) => s + d.longLiq, 0);

@@ -1,12 +1,14 @@
 import { useMemo } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Panel, Chip } from "./Panel";
 import { timeAgo } from "@/lib/whale/format";
 import { useAsync } from "@/lib/whale/useAsync";
-import { fetchNews } from "@/lib/whale/services";
+import { fetchNewsServer } from "@/lib/whale/market.functions";
 import { ErrorState, LoadingState } from "./StateView";
 
 export function NewsAI() {
-  const fetcher = useMemo(() => (s: AbortSignal) => fetchNews(s), []);
+  const fn = useServerFn(fetchNewsServer);
+  const fetcher = useMemo(() => () => fn(), [fn]);
   const { data: items, error, loading, retry } = useAsync(fetcher, [], { refreshMs: 120_000 });
   const breaking = items?.find((i) => (i.ai?.score ?? 0) >= 9);
 

@@ -38,7 +38,7 @@ export async function fetchGlobals(signal?: AbortSignal): Promise<MarketGlobals>
 }
 
 // ============ FUNDING (Binance + Bybit + OKX) ============
-const SYMBOLS: Symbol[] = ["BTC", "ETH", "SOL"];
+const SYMBOLS: Symbol[] = ["BTC", "ETH", "SOL", "LTC"];
 
 async function binanceFunding(sym: Symbol, signal?: AbortSignal) {
   const j = await jget(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${sym}USDT`, signal);

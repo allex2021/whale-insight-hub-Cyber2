@@ -25,6 +25,12 @@ export function HeaderBar() {
     refetchInterval: 60_000,
   });
   const [updated, setUpdated] = useState<string>("--:--:--");
+  const [email, setEmail] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+  }, []);
 
   useEffect(() => {
     if (Object.keys(prices).length === 0) return;
@@ -32,6 +38,11 @@ export function HeaderBar() {
   }, [prices]);
 
   const symbols: Array<"BTC" | "ETH" | "SOL"> = ["BTC", "ETH", "SOL"];
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/login" });
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">

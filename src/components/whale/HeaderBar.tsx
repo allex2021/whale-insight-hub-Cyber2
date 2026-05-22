@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Activity } from "lucide-react";
+import { Activity, LogOut, Settings as SettingsIcon } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchMarketGlobals } from "@/lib/whale/market.functions";
 import { useBinancePriceStream } from "@/hooks/useBinanceWhaleStream";
 import { fmtPct, fmtUSD } from "@/lib/whale/format";
+import { supabase } from "@/integrations/supabase/client";
 
 function fgColor(v: number) {
   if (v >= 75) return "text-bull";
@@ -23,6 +25,12 @@ export function HeaderBar() {
     refetchInterval: 60_000,
   });
   const [updated, setUpdated] = useState<string>("--:--:--");
+  const [email, setEmail] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+  }, []);
 
   useEffect(() => {
     if (Object.keys(prices).length === 0) return;
@@ -30,6 +38,11 @@ export function HeaderBar() {
   }, [prices]);
 
   const symbols: Array<"BTC" | "ETH" | "SOL"> = ["BTC", "ETH", "SOL"];
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/login" });
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
@@ -90,6 +103,16 @@ export function HeaderBar() {
             <Activity className="h-3 w-3 text-bull" />
             <span className="text-muted-foreground hidden sm:inline">{updated}</span>
           </div>
+          <Link to="/settings" title="Settings"
+            className="rounded-md border border-border bg-secondary p-1.5 hover:border-border-bright">
+            <SettingsIcon className="h-3.5 w-3.5" />
+          </Link>
+          {email && (
+            <button onClick={logout} title={`Sign out (${email})`}
+              className="rounded-md border border-border bg-secondary p-1.5 hover:border-bear/40 hover:text-bear">
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </header>

@@ -12,7 +12,7 @@ import { InterMarketCorrelation } from "@/components/whale/InterMarketCorrelatio
 import { AITradingSignals } from "@/components/whale/AITradingSignals";
 import { AlertCenter } from "@/components/whale/AlertCenter";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Whale Intelligence Pro · by Allex@Cyber2" },

@@ -14,7 +14,147 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_signals: {
+        Row: {
+          asset: string
+          confidence: number
+          created_at: string
+          direction: string
+          entry: number | null
+          id: string
+          model: string
+          reasoning: string | null
+          stop: number | null
+          target: number | null
+          timeframe: string
+        }
+        Insert: {
+          asset: string
+          confidence: number
+          created_at?: string
+          direction: string
+          entry?: number | null
+          id?: string
+          model?: string
+          reasoning?: string | null
+          stop?: number | null
+          target?: number | null
+          timeframe?: string
+        }
+        Update: {
+          asset?: string
+          confidence?: number
+          created_at?: string
+          direction?: string
+          entry?: number | null
+          id?: string
+          model?: string
+          reasoning?: string | null
+          stop?: number | null
+          target?: number | null
+          timeframe?: string
+        }
+        Relationships: []
+      }
+      alerts: {
+        Row: {
+          alert_type: string
+          asset: string | null
+          created_at: string
+          id: string
+          message: string
+          payload: Json | null
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          asset?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          payload?: Json | null
+          severity?: string
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          asset?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          payload?: Json | null
+          severity?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          enable_alerts: boolean
+          telegram_bot_token: string | null
+          telegram_chat_id: string | null
+          updated_at: string
+          user_id: string
+          watchlist: string[]
+          whale_min_usd: number
+        }
+        Insert: {
+          enable_alerts?: boolean
+          telegram_bot_token?: string | null
+          telegram_chat_id?: string | null
+          updated_at?: string
+          user_id: string
+          watchlist?: string[]
+          whale_min_usd?: number
+        }
+        Update: {
+          enable_alerts?: boolean
+          telegram_bot_token?: string | null
+          telegram_chat_id?: string | null
+          updated_at?: string
+          user_id?: string
+          watchlist?: string[]
+          whale_min_usd?: number
+        }
+        Relationships: []
+      }
+      whale_trades: {
+        Row: {
+          asset: string
+          created_at: string
+          exchange: string
+          id: string
+          price: number
+          quantity: number
+          side: string
+          size_usd: number
+          trade_time: string
+        }
+        Insert: {
+          asset: string
+          created_at?: string
+          exchange?: string
+          id?: string
+          price: number
+          quantity: number
+          side: string
+          size_usd: number
+          trade_time?: string
+        }
+        Update: {
+          asset?: string
+          created_at?: string
+          exchange?: string
+          id?: string
+          price?: number
+          quantity?: number
+          side?: string
+          size_usd?: number
+          trade_time?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

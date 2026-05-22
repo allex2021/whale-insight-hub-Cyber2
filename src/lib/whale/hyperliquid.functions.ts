@@ -91,9 +91,9 @@ export const fetchHyperliquidWhales = createServerFn({ method: "GET" }).handler(
       return w ? parseFloat(w[1].vlm) : 0;
     };
     const candidates = lb.leaderboardRows
-      .filter((r) => parseFloat(r.accountValue) > 1_000_000)
+      .filter((r) => parseFloat(r.accountValue) > 500_000)
       .sort((a, b) => dayVlm(b) - dayVlm(a))
-      .slice(0, 25);
+      .slice(0, 60);
 
     // 3. Fetch clearinghouseState for each (parallel, bounded)
     const states = await Promise.all(
@@ -165,7 +165,7 @@ export const fetchHyperliquidWhales = createServerFn({ method: "GET" }).handler(
         liqDistancePct,
         smartScore,
       });
-      if (rows.length >= 12) break;
+      if (rows.length >= 40) break;
     }
 
     cache = { at: Date.now(), data: rows };

@@ -56,7 +56,7 @@ export function AITradingSignals() {
   useEffect(() => {
     if (!data) return;
     const have = new Set(data.signals.map((s) => s.asset));
-    const missing = (["BTC", "ETH", "SOL"] as Asset[]).filter((a) => !have.has(a) && latestPrices[a]);
+    const missing = (["BTC", "ETH", "SOL", "LTC"] as Asset[]).filter((a) => !have.has(a) && latestPrices[a]);
     if (missing.length > 0 && !mut.isPending) {
       mut.mutate(missing[0]);
     }

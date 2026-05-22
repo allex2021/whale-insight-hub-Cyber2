@@ -46,33 +46,64 @@ export const fetchMarketGlobals = createServerFn({ method: "GET" }).handler(asyn
 // ============ NEWS (CryptoCompare free API — no auth required) ============
 let newsCache: { at: number; data: NewsItem[] } | null = null;
 
+type CryptoCompareNewsPayload = {
+  Data?: unknown;
+};
+
+type CryptoCompareNewsRow = {
+  id?: string | number;
+  title?: string;
+  url?: string;
+  source?: string;
+  source_info?: { name?: string };
+  published_on?: number;
+  upvotes?: string | number;
+  downvotes?: string | number;
+  categories?: string;
+  body?: string;
+};
+
+function getNewsRows(payload: CryptoCompareNewsPayload): CryptoCompareNewsRow[] {
+  if (Array.isArray(payload?.Data)) return payload.Data as CryptoCompareNewsRow[];
+  if (payload?.Data && typeof payload.Data === "object") {
+    return Object.values(payload.Data as Record<string, CryptoCompareNewsRow>).filter(Boolean);
+  }
+  return [];
+}
+
 export const fetchNewsServer = createServerFn({ method: "GET" }).handler(async (): Promise<NewsItem[]> => {
   if (newsCache && Date.now() - newsCache.at < 60_000) return newsCache.data;
-  const r = await fetch("https://min-api.cryptocompare.com/data/v2/news/?lang=EN&sortOrder=latest");
-  if (!r.ok) throw new Error(`cryptocompare ${r.status}`);
-  const j = await r.json() as { Data?: Array<{ id: string; title: string; url: string; source: string; source_info?: { name: string }; published_on: number; upvotes?: string; downvotes?: string; categories?: string; body?: string }> };
-  const arr = Array.isArray(j?.Data) ? j.Data : [];
-  const data: NewsItem[] = arr.slice(0, 20).map((p) => {
-    const up = parseInt(p.upvotes ?? "0", 10);
-    const down = parseInt(p.downvotes ?? "0", 10);
+  try {
+    const r = await fetch("https://min-api.cryptocompare.com/data/v2/news/?lang=EN&sortOrder=latest");
+    if (!r.ok) throw new Error(`cryptocompare ${r.status}`);
+    const j = (await r.json()) as CryptoCompareNewsPayload;
+    const rows = getNewsRows(j);
+    const data: NewsItem[] = rows.slice(0, 20).map((p, index) => {
+      const up = parseInt(String(p.upvotes ?? "0"), 10);
+      const down = parseInt(String(p.downvotes ?? "0"), 10);
     const net = up - down;
-    const title = p.title.toLowerCase();
-    const bullishKw = /(surge|rally|soar|gain|bullish|jump|breakout|approve|adopt|all-time)/i.test(title);
-    const bearishKw = /(crash|plunge|drop|bearish|sell-off|hack|ban|sue|liquidat|reject)/i.test(title);
-    const verdict: "BULLISH" | "BEARISH" | "NEUTRAL" = bullishKw && !bearishKw ? "BULLISH" : bearishKw && !bullishKw ? "BEARISH" : net > 0 ? "BULLISH" : net < 0 ? "BEARISH" : "NEUTRAL";
-    const score = Math.min(10, Math.max(1, Math.round(5 + (bullishKw ? 2 : 0) - (bearishKw ? 2 : 0) + Math.sign(net))));
-    const impact: "HIGH" | "MEDIUM" | "LOW" = score >= 8 ? "HIGH" : score >= 5 ? "MEDIUM" : "LOW";
-    return {
-      id: String(p.id),
-      source: p.source_info?.name ?? p.source,
-      title: p.title,
-      url: p.url,
-      publishedAt: p.published_on * 1000,
-      ai: { score, verdict, impact, summary: (p.body ?? "").slice(0, 140) || `Categories: ${p.categories ?? "general"}` },
-    };
-  });
-  newsCache = { at: Date.now(), data };
-  return data;
+      const title = (p.title ?? "Untitled").toLowerCase();
+      const bullishKw = /(surge|rally|soar|gain|bullish|jump|breakout|approve|adopt|all-time)/i.test(title);
+      const bearishKw = /(crash|plunge|drop|bearish|sell-off|hack|ban|sue|liquidat|reject)/i.test(title);
+      const verdict: "BULLISH" | "BEARISH" | "NEUTRAL" = bullishKw && !bearishKw ? "BULLISH" : bearishKw && !bullishKw ? "BEARISH" : net > 0 ? "BULLISH" : net < 0 ? "BEARISH" : "NEUTRAL";
+      const score = Math.min(10, Math.max(1, Math.round(5 + (bullishKw ? 2 : 0) - (bearishKw ? 2 : 0) + Math.sign(net))));
+      const impact: "HIGH" | "MEDIUM" | "LOW" = score >= 8 ? "HIGH" : score >= 5 ? "MEDIUM" : "LOW";
+      return {
+        id: String(p.id ?? index),
+        source: p.source_info?.name ?? p.source ?? "CryptoCompare",
+        title: p.title ?? "Untitled",
+        url: p.url ?? "#",
+        publishedAt: (p.published_on ?? Math.floor(Date.now() / 1000)) * 1000,
+        ai: { score, verdict, impact, summary: (p.body ?? "").slice(0, 140) || `Categories: ${p.categories ?? "general"}` },
+      };
+    });
+    newsCache = { at: Date.now(), data };
+    return data;
+  } catch (error) {
+    console.error("Failed to fetch crypto news:", error);
+    newsCache = { at: Date.now(), data: [] };
+    return [];
+  }
 });
 
 // ============ CROSS-EXCHANGE SIGNAL (server-side aggregation) ============

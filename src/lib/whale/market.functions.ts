@@ -43,27 +43,31 @@ export const fetchMarketGlobals = createServerFn({ method: "GET" }).handler(asyn
   return result;
 });
 
-// ============ NEWS (CryptoPanic, server-side to bypass browser CORS) ============
+// ============ NEWS (CryptoCompare free API — no auth required) ============
 let newsCache: { at: number; data: NewsItem[] } | null = null;
 
 export const fetchNewsServer = createServerFn({ method: "GET" }).handler(async (): Promise<NewsItem[]> => {
   if (newsCache && Date.now() - newsCache.at < 60_000) return newsCache.data;
-  const r = await fetch("https://cryptopanic.com/api/free/v1/posts/?public=true&kind=news");
-  if (!r.ok) throw new Error(`cryptopanic ${r.status}`);
-  const j = await r.json() as { results?: Array<{ id: number; title: string; source: { title: string }; url: string; published_at: string; votes?: { positive: number; negative: number; important: number } }> };
-  const data: NewsItem[] = (j.results ?? []).slice(0, 20).map((p) => {
-    const v = p.votes ?? { positive: 0, negative: 0, important: 0 };
-    const net = v.positive - v.negative;
-    const verdict: "BULLISH" | "BEARISH" | "NEUTRAL" = net > 0 ? "BULLISH" : net < 0 ? "BEARISH" : "NEUTRAL";
-    const score = Math.min(10, Math.max(1, Math.round(5 + net * 0.7 + (v.important ?? 0))));
+  const r = await fetch("https://min-api.cryptocompare.com/data/v2/news/?lang=EN&sortOrder=latest");
+  if (!r.ok) throw new Error(`cryptocompare ${r.status}`);
+  const j = await r.json() as { Data?: Array<{ id: string; title: string; url: string; source: string; source_info?: { name: string }; published_on: number; upvotes?: string; downvotes?: string; categories?: string; body?: string }> };
+  const data: NewsItem[] = (j.Data ?? []).slice(0, 20).map((p) => {
+    const up = parseInt(p.upvotes ?? "0", 10);
+    const down = parseInt(p.downvotes ?? "0", 10);
+    const net = up - down;
+    const title = p.title.toLowerCase();
+    const bullishKw = /(surge|rally|soar|gain|bullish|jump|breakout|approve|adopt|all-time)/i.test(title);
+    const bearishKw = /(crash|plunge|drop|bearish|sell-off|hack|ban|sue|liquidat|reject)/i.test(title);
+    const verdict: "BULLISH" | "BEARISH" | "NEUTRAL" = bullishKw && !bearishKw ? "BULLISH" : bearishKw && !bullishKw ? "BEARISH" : net > 0 ? "BULLISH" : net < 0 ? "BEARISH" : "NEUTRAL";
+    const score = Math.min(10, Math.max(1, Math.round(5 + (bullishKw ? 2 : 0) - (bearishKw ? 2 : 0) + Math.sign(net))));
     const impact: "HIGH" | "MEDIUM" | "LOW" = score >= 8 ? "HIGH" : score >= 5 ? "MEDIUM" : "LOW";
     return {
       id: String(p.id),
-      source: p.source.title,
+      source: p.source_info?.name ?? p.source,
       title: p.title,
       url: p.url,
-      publishedAt: new Date(p.published_at).getTime(),
-      ai: { score, verdict, impact, summary: `Community sentiment: ${verdict.toLowerCase()} (+${v.positive}/-${v.negative}/⚡${v.important ?? 0})` },
+      publishedAt: p.published_on * 1000,
+      ai: { score, verdict, impact, summary: (p.body ?? "").slice(0, 140) || `Categories: ${p.categories ?? "general"}` },
     };
   });
   newsCache = { at: Date.now(), data };

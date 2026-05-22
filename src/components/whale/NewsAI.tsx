@@ -8,7 +8,7 @@ import { ErrorState, LoadingState } from "./StateView";
 
 export function NewsAI() {
   const fn = useServerFn(fetchNewsServer);
-  const fetcher = useMemo(() => () => fn(), [fn]);
+  const fetcher = useMemo(() => (_s: AbortSignal) => fn(), [fn]);
   const { data: items, error, loading, retry } = useAsync(fetcher, [], { refreshMs: 120_000 });
   const breaking = items?.find((i) => (i.ai?.score ?? 0) >= 9);
 

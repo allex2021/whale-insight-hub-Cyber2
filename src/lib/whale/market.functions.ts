@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import type { ExchangeSignal, NewsItem, Symbol } from "./types";
 
 /**
  * Server-side proxy for CoinGecko global market data.

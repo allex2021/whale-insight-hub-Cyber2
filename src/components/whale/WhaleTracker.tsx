@@ -73,9 +73,9 @@ export function WhaleTracker() {
         </div>
       }
     >
-      {isLoading && !data && <StateView state="loading" message="Fetching live whale positions from Hyperliquid…" />}
-      {error && !data && <StateView state="error" message={String(error)} onRetry={() => refetch()} />}
-      {data && filtered.length === 0 && <StateView state="empty" message="No positions match the current filter." />}
+      {isLoading && !data && <LoadingState label="Fetching live whale positions from Hyperliquid…" />}
+      {error && !data && <ErrorState error={String(error)} onRetry={() => refetch()} />}
+      {data && filtered.length === 0 && <EmptyState label="No positions match the current filter." />}
 
       {data && filtered.length > 0 && (
         <div className="overflow-x-auto -mx-4">

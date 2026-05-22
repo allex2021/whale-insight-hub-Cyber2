@@ -24,7 +24,7 @@ export function CrossExchangeSignal() {
       accent="green"
       action={
         <div className="flex gap-1">
-          {(["BTC", "ETH", "SOL"] as Symbol[]).map((s) => (
+          {(["BTC", "ETH", "SOL", "LTC"] as Symbol[]).map((s) => (
             <button key={s} onClick={() => setSym(s)}
               className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${sym === s ? "border-bull bg-bull/15 text-bull" : "border-border bg-secondary/50 text-muted-foreground"}`}
             >{s}</button>

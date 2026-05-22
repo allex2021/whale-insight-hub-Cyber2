@@ -1,6 +1,6 @@
 export type Side = "LONG" | "SHORT";
 export type Tier = "MEGA" | "SHARK" | "BIGFISH";
-export type Symbol = "BTC" | "ETH" | "SOL";
+export type Symbol = "BTC" | "ETH" | "SOL" | "LTC";
 
 export interface Whale {
   id: string;

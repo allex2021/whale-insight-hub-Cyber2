@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 export type WhaleTrade = {
   id: string;
-  asset: "BTC" | "ETH" | "SOL";
+  asset: "BTC" | "ETH" | "SOL" | "LTC";
   side: "BUY" | "SELL";
   price: number;
   quantity: number;
@@ -11,9 +11,9 @@ export type WhaleTrade = {
   exchange: "binance";
 };
 
-const STREAMS = ["btcusdt@aggTrade", "ethusdt@aggTrade", "solusdt@aggTrade"];
+const STREAMS = ["btcusdt@aggTrade", "ethusdt@aggTrade", "solusdt@aggTrade", "ltcusdt@aggTrade"];
 const ASSET_MAP: Record<string, WhaleTrade["asset"]> = {
-  BTCUSDT: "BTC", ETHUSDT: "ETH", SOLUSDT: "SOL",
+  BTCUSDT: "BTC", ETHUSDT: "ETH", SOLUSDT: "SOL", LTCUSDT: "LTC",
 };
 
 /**

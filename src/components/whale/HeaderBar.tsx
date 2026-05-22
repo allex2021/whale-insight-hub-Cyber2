@@ -15,7 +15,7 @@ function fgColor(v: number) {
 export function HeaderBar() {
   const [prices, setPrices] = useState<PriceTick[]>([]);
   const [globals, setGlobals] = useState<MarketGlobals | null>(null);
-  const [updated, setUpdated] = useState<Date>(new Date());
+  const [updated, setUpdated] = useState<string>("--:--:--");
 
   useEffect(() => {
     const ctl = new AbortController();
@@ -23,7 +23,7 @@ export function HeaderBar() {
     const load = async () => {
       const [p, g] = await Promise.all([fetchPrices(ctl.signal), fetchGlobals(ctl.signal)]);
       if (!mounted) return;
-      setPrices(p); setGlobals(g); setUpdated(new Date());
+      setPrices(p); setGlobals(g); setUpdated(new Date().toLocaleTimeString());
     };
     load();
     const id = setInterval(load, 30_000);

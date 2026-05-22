@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Panel, Chip } from "./Panel";
 import { timeAgo, fmtPrice } from "@/lib/whale/format";
 import { generateAISignal, fetchLatestSignals } from "@/lib/whale/ai.functions";
-import { useBinanceWhaleStream } from "@/hooks/useBinanceWhaleStream";
+import { useBinanceWhaleStream, useBinancePriceStream } from "@/hooks/useBinanceWhaleStream";
 import { cn } from "@/lib/utils";
 
 type Asset = "BTC" | "ETH" | "SOL" | "LTC";
@@ -16,6 +16,7 @@ export function AITradingSignals() {
   const fetchSignals = useServerFn(fetchLatestSignals);
   const generate = useServerFn(generateAISignal);
   const { trades } = useBinanceWhaleStream(500_000, 100);
+  const priceStream = useBinancePriceStream();
 
   const { data, isLoading } = useQuery({
     queryKey: ["ai-signals"],
@@ -25,11 +26,11 @@ export function AITradingSignals() {
 
   const latestPrices = useMemo(() => {
     const out: Partial<Record<Asset, number>> = {};
-    for (const t of trades) {
-      if (!out[t.asset]) out[t.asset] = t.price;
-    }
+    (["BTC", "ETH", "SOL", "LTC"] as Asset[]).forEach((a) => {
+      if (priceStream[a]?.price) out[a] = priceStream[a].price;
+    });
     return out;
-  }, [trades]);
+  }, [priceStream]);
 
   const summarize = useCallback((asset: Asset) => {
     const recent = trades.filter((t) => t.asset === asset).slice(0, 20);

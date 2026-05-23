@@ -5,7 +5,9 @@ import { AlertTriangle, ArrowDownRight, ArrowUpRight, Eye, Filter } from "lucide
 import { Panel } from "./Panel";
 import { LoadingState, ErrorState, EmptyState } from "./StateView";
 import { fetchHyperliquidWhales, type WhalePosition } from "@/lib/whale/hyperliquid.functions";
+import { useSymbolFilter } from "@/hooks/useSymbolFilter";
 import { cn } from "@/lib/utils";
+
 
 type SideFilter = "ALL" | "LONG" | "SHORT";
 
@@ -42,11 +44,16 @@ export function WhaleTracker() {
     staleTime: 30_000,
   });
   const [sideFilter, setSideFilter] = useState<SideFilter>("ALL");
+  const { selected } = useSymbolFilter();
 
   const filtered = useMemo(() => {
     if (!data) return [];
-    return data.filter((w) => sideFilter === "ALL" || w.side === sideFilter);
-  }, [data, sideFilter]);
+    return data.filter((w) =>
+      (sideFilter === "ALL" || w.side === sideFilter) &&
+      selected.includes(w.coin as never),
+    );
+  }, [data, sideFilter, selected]);
+
 
   return (
     <Panel

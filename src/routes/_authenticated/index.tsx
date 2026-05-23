@@ -4,6 +4,7 @@ import { HeaderBar } from "@/components/whale/HeaderBar";
 import { MacroBar } from "@/components/whale/MacroBar";
 import { SymbolFilter } from "@/components/whale/SymbolFilter";
 import { WhaleTracker } from "@/components/whale/WhaleTracker";
+import { WhaleActivityFeed } from "@/components/whale/WhaleActivityFeed";
 import { LongShortRatio } from "@/components/whale/LongShortRatio";
 import { LazyMount } from "@/components/whale/LazyMount";
 import { PriorityAlertTicker } from "@/components/whale/PriorityAlertTicker";
@@ -86,6 +87,7 @@ function Dashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 mt-4">
+            <WhaleActivityFeed />
             <WhaleTracker />
             <LongShortRatio />
             <LazyMount minHeight={400}><OnChainPanel /></LazyMount>

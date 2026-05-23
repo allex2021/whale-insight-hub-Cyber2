@@ -55,13 +55,10 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 const TABS = [
-  { v: "overview", label: "Overview" },
-  { v: "whales", label: "Whale Tracker" },
-  { v: "liquidations", label: "Liquidations" },
-  { v: "options", label: "Options Flow" },
-  { v: "ai", label: "AI Signals" },
-  { v: "macro", label: "Inter-Market" },
-  { v: "alerts", label: "Alerts" },
+  { v: "live", label: "Live" },
+  { v: "derivs", label: "Derivatives" },
+  { v: "ai", label: "AI" },
+  { v: "macro", label: "Macro & Alerts" },
 ] as const;
 
 function Dashboard() {
@@ -73,50 +70,39 @@ function Dashboard() {
         <MacroBar />
         <SymbolFilter />
 
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg border border-border bg-card/50 p-1 backdrop-blur-sm">
+        <Tabs defaultValue="live" className="space-y-4">
+          <TabsList className="inline-flex h-9 w-auto gap-1 rounded-lg border border-border bg-card/50 p-1 backdrop-blur-sm">
             {TABS.map((t) => (
               <TabsTrigger
                 key={t.v}
                 value={t.v}
-                className="rounded-md px-3 py-1.5 text-xs sm:text-sm font-semibold tracking-wide uppercase data-[state=active]:bg-gradient-to-br data-[state=active]:from-[var(--neon-purple)]/30 data-[state=active]:to-[var(--neon-blue)]/20 data-[state=active]:text-foreground data-[state=active]:shadow-[0_0_15px_rgba(168,85,247,0.25)]"
+                className="h-7 rounded-md px-3 text-[11px] sm:text-xs font-semibold tracking-wide uppercase data-[state=active]:bg-gradient-to-br data-[state=active]:from-[var(--neon-purple)]/30 data-[state=active]:to-[var(--neon-blue)]/20 data-[state=active]:text-foreground data-[state=active]:shadow-[0_0_15px_rgba(168,85,247,0.25)]"
               >
                 {t.label}
               </TabsTrigger>
             ))}
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-4 mt-4">
+          <TabsContent value="live" className="space-y-4 mt-4">
             <WhaleActivityFeed />
-            <WhaleTracker />
-            <LongShortRatio />
-            <LazyMount minHeight={400}><OnChainPanel /></LazyMount>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <LazyMount minHeight={320}><LiquidationFeed /></LazyMount>
-              <LazyMount minHeight={320}><StablecoinSupply /></LazyMount>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="whales" className="space-y-4 mt-4">
             <WhaleTracker />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <LazyMount minHeight={360}><SmartMoneyBoard /></LazyMount>
               <LazyMount minHeight={360}><WhaleDivergence /></LazyMount>
             </div>
+            <LongShortRatio />
             <LazyMount minHeight={280}><CVDPanel /></LazyMount>
             <LazyMount minHeight={320}><OrderBookWalls /></LazyMount>
+            <LazyMount minHeight={400}><OnChainPanel /></LazyMount>
           </TabsContent>
 
-          <TabsContent value="liquidations" className="space-y-4 mt-4">
+          <TabsContent value="derivs" className="space-y-4 mt-4">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <LazyMount minHeight={360}><LiquidationHeatmap /></LazyMount>
               <LazyMount minHeight={360}><FundingRateMonitor /></LazyMount>
             </div>
             <LazyMount minHeight={320}><LiquidationFeed /></LazyMount>
             <LazyMount minHeight={320}><OpenInterestTracker /></LazyMount>
-          </TabsContent>
-
-          <TabsContent value="options" className="space-y-4 mt-4">
             <LazyMount minHeight={420}><DeribitOptionsPanel /></LazyMount>
             <LazyMount minHeight={360}><OptionsFlow /></LazyMount>
           </TabsContent>
@@ -131,9 +117,6 @@ function Dashboard() {
             <LazyMount minHeight={320}><InterMarketCorrelation /></LazyMount>
             <LazyMount minHeight={280}><SupportResistance /></LazyMount>
             <LazyMount minHeight={320}><StablecoinSupply /></LazyMount>
-          </TabsContent>
-
-          <TabsContent value="alerts" className="space-y-4 mt-4">
             <LazyMount minHeight={360}><CustomAlertBuilder /></LazyMount>
             <LazyMount minHeight={320}><AlertCenter /></LazyMount>
           </TabsContent>

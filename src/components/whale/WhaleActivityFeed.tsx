@@ -64,8 +64,13 @@ function ago(ts: number) {
 
 export function WhaleActivityFeed() {
   const [tier, setTier] = useState<number>(100_000);
+  const [mounted, setMounted] = useState(false);
   const { trades: liveTrades, connected } = useBinanceWhaleStream(tier, 80);
   const { selected } = useSymbolFilter();
+  const { playPump, playDump, muted, toggleMuted } = useWhaleAlertSound();
+  const seenIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => { setMounted(true); }, []);
 
   // Bootstrap with recent REST trades so the feed is never empty on mount.
   const { data: seedTrades } = useQuery({
@@ -81,6 +86,22 @@ export function WhaleActivityFeed() {
     for (const t of seedTrades ?? []) if (!map.has(t.id)) map.set(t.id, t);
     return Array.from(map.values()).sort((a, b) => b.tradeTime - a.tradeTime).slice(0, 120);
   }, [liveTrades, seedTrades]);
+
+  // Play buy/sell sound on new live trades only (skip backfill on first mount)
+  useEffect(() => {
+    if (!liveTrades.length) return;
+    const isFirst = seenIds.current.size === 0;
+    for (const t of liveTrades) {
+      if (seenIds.current.has(t.id)) continue;
+      seenIds.current.add(t.id);
+      if (isFirst) continue;
+      if (t.side === "BUY") playPump("pump"); else playDump("dump");
+    }
+    if (seenIds.current.size > 500) {
+      seenIds.current = new Set(liveTrades.map((t) => t.id));
+    }
+  }, [liveTrades, playPump, playDump]);
+
 
   const filtered = useMemo(
     () => merged.filter((t) => selected.includes(t.asset as never)),

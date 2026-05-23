@@ -24,6 +24,7 @@ const OptionsFlow = lazy(() => import("@/components/whale/OptionsFlow").then(m =
 const CrossExchangeSignal = lazy(() => import("@/components/whale/CrossExchangeSignal").then(m => ({ default: m.CrossExchangeSignal })));
 const NewsAI = lazy(() => import("@/components/whale/NewsAI").then(m => ({ default: m.NewsAI })));
 const SmartMoneyBoard = lazy(() => import("@/components/whale/SmartMoneyBoard").then(m => ({ default: m.SmartMoneyBoard })));
+const SmartMoneyTracker = lazy(() => import("@/components/whale/SmartMoneyTracker").then(m => ({ default: m.SmartMoneyTracker })));
 const WhaleDivergence = lazy(() => import("@/components/whale/WhaleDivergence").then(m => ({ default: m.WhaleDivergence })));
 const InterMarketCorrelation = lazy(() => import("@/components/whale/InterMarketCorrelation").then(m => ({ default: m.InterMarketCorrelation })));
 const AITradingSignals = lazy(() => import("@/components/whale/AITradingSignals").then(m => ({ default: m.AITradingSignals })));
@@ -90,6 +91,7 @@ function Dashboard() {
               <LazyMount minHeight={360}><SmartMoneyBoard /></LazyMount>
               <LazyMount minHeight={360}><WhaleDivergence /></LazyMount>
             </div>
+            <LazyMount minHeight={480}><SmartMoneyTracker /></LazyMount>
             <div className="rounded-xl border-2 border-[var(--neon-purple)]/30 bg-card/30 p-1 shadow-[0_0_20px_rgba(168,85,247,0.15)]">
               <LazyMount minHeight={420}><AlertCenter /></LazyMount>
             </div>

@@ -83,35 +83,113 @@ export async function fetchFunding(signal?: AbortSignal): Promise<FundingRow[]> 
   return rows;
 }
 
-// ============ OPEN INTEREST / HEATMAP (Binance) ============
+// ============ OPEN INTEREST / HEATMAP (multi-exchange) ============
 export interface LiqBucket { price: number; longLiq: number; shortLiq: number }
+export interface LiqCluster { price: number; usd: number; side: "LONG" | "SHORT"; distancePct: number }
+export type LiqRange = "1H" | "4H" | "12H" | "24H";
+export interface LiqHeatmap {
+  buckets: LiqBucket[];
+  spot: number;
+  symbol: Symbol;
+  range: LiqRange;
+  totalOI: number;
+  oiDeltaPct: number;
+  longTotal: number;
+  shortTotal: number;
+  topClusters: LiqCluster[];
+  exchanges: { binance: number; bybit: number; okx: number };
+}
 
-export async function fetchLiqHeatmap(signal?: AbortSignal): Promise<{ buckets: LiqBucket[]; spot: number }> {
-  // Use top liquidation orders from Binance forceOrders aggregated by price bucket.
-  // forceOrders endpoint is auth-restricted; use Coinglass-free alternative via
-  // Binance openInterestHist + ticker. We model heatmap from OI density using
-  // delivery-data endpoint that's open: takerlongshortRatio + OI buckets.
-  const [oi, ticker] = await Promise.all([
-    jget("https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=5m&limit=48", signal) as Promise<Array<{ sumOpenInterestValue: string; timestamp: number }>>,
-    jget("https://fapi.binance.com/fapi/v1/ticker/price?symbol=BTCUSDT", signal) as Promise<{ price: string }>,
+const RANGE_MAP: Record<LiqRange, { period: string; limit: number; spread: number }> = {
+  "1H":  { period: "5m",  limit: 12, spread: 0.05 },
+  "4H":  { period: "15m", limit: 16, spread: 0.10 },
+  "12H": { period: "1h",  limit: 12, spread: 0.15 },
+  "24H": { period: "1h",  limit: 24, spread: 0.22 },
+};
+
+async function bybitOI(sym: Symbol, signal?: AbortSignal): Promise<number> {
+  const j = await jget(`https://api.bybit.com/v5/market/tickers?category=linear&symbol=${sym}USDT`, signal);
+  const t = j.result?.list?.[0];
+  const oi = parseFloat(t?.openInterest ?? "0");
+  const last = parseFloat(t?.lastPrice ?? "0");
+  return oi * last;
+}
+async function okxOI(sym: Symbol, signal?: AbortSignal): Promise<number> {
+  const j = await jget(`https://www.okx.com/api/v5/public/open-interest?instType=SWAP&instId=${sym}-USDT-SWAP`, signal);
+  const oiCcy = parseFloat(j.data?.[0]?.oiCcy ?? "0");
+  const t = await jget(`https://www.okx.com/api/v5/market/ticker?instId=${sym}-USDT-SWAP`, signal);
+  const last = parseFloat(t.data?.[0]?.last ?? "0");
+  return oiCcy * last;
+}
+
+export async function fetchLiqHeatmap(
+  opts: { symbol?: Symbol; range?: LiqRange } = {},
+  signal?: AbortSignal,
+): Promise<LiqHeatmap> {
+  const symbol: Symbol = opts.symbol ?? "BTC";
+  const range: LiqRange = opts.range ?? "4H";
+  const { period, limit, spread } = RANGE_MAP[range];
+
+  const [oiHist, ticker, byb, okx] = await Promise.all([
+    jget(`https://fapi.binance.com/futures/data/openInterestHist?symbol=${symbol}USDT&period=${period}&limit=${limit}`, signal) as Promise<Array<{ sumOpenInterestValue: string; timestamp: number }>>,
+    jget(`https://fapi.binance.com/fapi/v1/ticker/price?symbol=${symbol}USDT`, signal) as Promise<{ price: string }>,
+    bybitOI(symbol, signal).catch(() => 0),
+    okxOI(symbol, signal).catch(() => 0),
   ]);
+
   const spot = parseFloat(ticker.price);
-  // Build symmetric price buckets ±15% around spot using OI distribution as proxy weight.
+  const binanceOIVal = oiHist.length ? parseFloat(oiHist[oiHist.length - 1].sumOpenInterestValue) : 0;
+  const binanceOIFirst = oiHist.length ? parseFloat(oiHist[0].sumOpenInterestValue) : 0;
+  const oiDeltaPct = binanceOIFirst ? ((binanceOIVal - binanceOIFirst) / binanceOIFirst) * 100 : 0;
+  const totalOI = binanceOIVal + byb + okx;
+
+  // Liquidation density model: derive cluster zones from common leverage tiers.
+  // Long liqs sit below spot (where longs get liquidated), shorts above.
+  // Common leverage clusters: 10x (~10%), 20x (~5%), 25x (~4%), 50x (~2%), 100x (~1%).
+  const BUCKETS = 60;
+  const step = (spot * spread * 2) / BUCKETS;
+  const half = BUCKETS / 2;
+
+  // Bias toward longs/shorts from OI delta: rising OI in a downtrend = more long liq risk, etc.
+  const longBias = 1 + Math.max(-0.4, Math.min(0.4, oiDeltaPct / 50));
+  const shortBias = 1 + Math.max(-0.4, Math.min(0.4, -oiDeltaPct / 50));
+
+  // Range-scaled leverage cluster positions (as fraction of spread)
+  const clusterFracs = [0.05, 0.10, 0.18, 0.35, 0.60, 0.85].map((f) => f);
   const buckets: LiqBucket[] = [];
-  const step = spot * 0.005; // 0.5% steps -> 60 buckets across ±15%
-  const totalOI = oi.reduce((s, x) => s + parseFloat(x.sumOpenInterestValue), 0);
-  for (let i = -30; i <= 30; i++) {
-    const price = +(spot + step * i).toFixed(0);
-    const dist = Math.abs(i) / 30;
-    // Density peaks near common leverage zones (5x, 10x, 20x, 25x, 50x)
-    const lev = [0.02, 0.04, 0.05, 0.10, 0.20];
-    const weight = lev.reduce((s, l) => s + Math.exp(-Math.pow((dist - l) * 18, 2)), 0);
-    const base = (totalOI / 60) * weight * 0.04;
-    const longLiq = i < 0 ? base : 0;
-    const shortLiq = i > 0 ? base : 0;
+  for (let i = -half; i < half; i++) {
+    const price = +(spot + step * i).toFixed(symbol === "SOL" ? 2 : 0);
+    const dist = Math.abs(i) / half; // 0..1 fraction of spread
+    const weight = clusterFracs.reduce((s, f) => {
+      const sharpness = 14 / (1 + f * 3); // tighter peaks for low-lev clusters
+      return s + Math.exp(-Math.pow((dist - f) * sharpness, 2));
+    }, 0);
+    const base = (totalOI / BUCKETS) * weight * 0.06;
+    const longLiq  = i < 0 ? base * longBias  : 0;
+    const shortLiq = i > 0 ? base * shortBias : 0;
     buckets.push({ price, longLiq, shortLiq });
   }
-  return { buckets, spot };
+
+  const longTotal = buckets.reduce((s, b) => s + b.longLiq, 0);
+  const shortTotal = buckets.reduce((s, b) => s + b.shortLiq, 0);
+
+  // Top 6 clusters (mix of long and short)
+  const clusters: LiqCluster[] = buckets
+    .map((b) => {
+      const usd = b.longLiq + b.shortLiq;
+      const side: "LONG" | "SHORT" = b.longLiq > b.shortLiq ? "LONG" : "SHORT";
+      return { price: b.price, usd, side, distancePct: ((b.price - spot) / spot) * 100 };
+    })
+    .filter((c) => c.usd > 0)
+    .sort((a, b) => b.usd - a.usd)
+    .slice(0, 6);
+
+  return {
+    buckets, spot, symbol, range,
+    totalOI, oiDeltaPct, longTotal, shortTotal,
+    topClusters: clusters,
+    exchanges: { binance: binanceOIVal, bybit: byb, okx },
+  };
 }
 
 // ============ CROSS-EXCHANGE SIGNAL ============

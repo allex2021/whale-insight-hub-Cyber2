@@ -37,8 +37,10 @@ export function LongShortRatio() {
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["long-short-ratio", period],
     queryFn: async () => {
-      const rows = await Promise.all(ASSETS.map((a) => fetchRatio(a, period)));
-      return rows;
+      const rows = await Promise.all(
+        ASSETS.map((a) => fetchRatio(a, period).catch(() => null)),
+      );
+      return rows.filter((r): r is Row => r !== null);
     },
     refetchInterval: 30_000,
   });

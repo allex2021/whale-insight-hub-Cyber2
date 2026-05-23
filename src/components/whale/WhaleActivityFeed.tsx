@@ -111,7 +111,7 @@ export function WhaleActivityFeed() {
   return (
     <Panel
       title="Live Whale Activity"
-      subtitle={`${filtered.length} trades · persisted across refresh`}
+      subtitle={`${mounted ? filtered.length : 0} trades · persisted across refresh`}
       accent="purple"
       action={
         <div className="flex items-center gap-2">
@@ -119,6 +119,13 @@ export function WhaleActivityFeed() {
             <Radio className={cn("h-3 w-3", connected ? "text-bull animate-pulse" : "text-bear")} />
             <span className={connected ? "text-bull" : "text-bear"}>{connected ? "Live" : "Off"}</span>
           </span>
+          <button
+            onClick={toggleMuted}
+            title={muted ? "Unmute buy/sell sounds" : "Mute buy/sell sounds"}
+            className="rounded p-1 text-muted-foreground hover:text-foreground"
+          >
+            {muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5 text-[var(--neon-purple)]" />}
+          </button>
           {TIERS.map((t) => (
             <button
               key={t.v}

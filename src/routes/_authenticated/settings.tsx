@@ -2,8 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Save, Send } from "lucide-react";
+import { ArrowLeft, Save, Send, Volume2 } from "lucide-react";
 import { getMySettings, saveMySettings, sendTelegramTest } from "@/lib/whale/settings.functions";
+import { useSoundSettings, type SoundKey } from "@/hooks/useSoundSettings";
+import { useWhaleAlertSound } from "@/hooks/useWhaleAlertSound";
+
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings · Whale Intelligence Pro" }] }),
@@ -92,6 +95,9 @@ function SettingsPage() {
                 Enable alert engine
               </label>
             </section>
+
+            <SoundSettingsSection />
+
 
             <section className="rounded-xl border border-border bg-card/60 p-5 space-y-4">
               <h2 className="text-sm font-bold">📨 Telegram delivery</h2>

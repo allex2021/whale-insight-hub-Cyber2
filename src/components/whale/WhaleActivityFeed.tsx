@@ -3,10 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowDownRight, ArrowUpRight, Radio, Volume2, VolumeX } from "lucide-react";
 import { Panel } from "./Panel";
 import { EmptyState } from "./StateView";
-import { useBinanceWhaleStream, type WhaleTrade, type WhaleAsset } from "@/hooks/useBinanceWhaleStream";
+import { type WhaleTrade, type WhaleAsset } from "@/hooks/useBinanceWhaleStream";
+import { useMultiExchangeWhaleStream } from "@/hooks/useMultiExchangeWhaleStream";
+import { EXCHANGE_META, type ExchangeId } from "@/lib/whale/multiExchangeStream";
 import { useSymbolFilter } from "@/hooks/useSymbolFilter";
 import { useWhaleAlertSound } from "@/hooks/useWhaleAlertSound";
 import { cn } from "@/lib/utils";
+
 
 const SYMBOL_MAP: Record<string, WhaleAsset> = {
   BTCUSDT: "BTC", ETHUSDT: "ETH", SOLUSDT: "SOL", LTCUSDT: "LTC",
@@ -62,17 +65,20 @@ function ago(ts: number) {
   return `${Math.floor(s / 3600)}h`;
 }
 
+const EXCHANGES: ExchangeId[] = ["binance", "bybit", "okx", "hyperliquid"];
+
 export function WhaleActivityFeed() {
   const [tier, setTier] = useState<number>(100_000);
   const [mounted, setMounted] = useState(false);
-  const { trades: liveTrades, connected } = useBinanceWhaleStream(tier, 80);
+  const [exchangeFilter, setExchangeFilter] = useState<ExchangeId | "ALL">("ALL");
+  const { trades: liveTrades, status } = useMultiExchangeWhaleStream(tier, 200);
   const { selected } = useSymbolFilter();
   const { playPump, playDump, muted, toggleMuted } = useWhaleAlertSound();
   const seenIds = useRef<Set<string>>(new Set());
 
   useEffect(() => { setMounted(true); }, []);
 
-  // Bootstrap with recent REST trades so the feed is never empty on mount.
+  // Bootstrap with recent REST trades (Binance) so the feed is never empty on mount.
   const { data: seedTrades } = useQuery({
     queryKey: ["whale-seed", tier],
     queryFn: () => fetchRecentWhales(tier),
@@ -84,7 +90,7 @@ export function WhaleActivityFeed() {
     const map = new Map<string, WhaleTrade>();
     for (const t of liveTrades) map.set(t.id, t);
     for (const t of seedTrades ?? []) if (!map.has(t.id)) map.set(t.id, t);
-    return Array.from(map.values()).sort((a, b) => b.tradeTime - a.tradeTime).slice(0, 120);
+    return Array.from(map.values()).sort((a, b) => b.tradeTime - a.tradeTime).slice(0, 200);
   }, [liveTrades, seedTrades]);
 
   // Play buy/sell sound on new live trades only (skip backfill on first mount)
@@ -97,16 +103,22 @@ export function WhaleActivityFeed() {
       if (isFirst) continue;
       if (t.side === "BUY") playPump("pump"); else playDump("dump");
     }
-    if (seenIds.current.size > 500) {
+    if (seenIds.current.size > 800) {
       seenIds.current = new Set(liveTrades.map((t) => t.id));
     }
   }, [liveTrades, playPump, playDump]);
 
 
   const filtered = useMemo(
-    () => merged.filter((t) => selected.includes(t.asset as never)),
-    [merged, selected],
+    () => merged.filter((t) =>
+      selected.includes(t.asset as never) &&
+      (exchangeFilter === "ALL" || t.exchange === exchangeFilter),
+    ),
+    [merged, selected, exchangeFilter],
   );
+
+  const anyConnected = status.binance || status.bybit || status.okx || status.hyperliquid;
+
 
   const stats = useMemo(() => {
     let buys = 0, sells = 0, buyUsd = 0, sellUsd = 0;
@@ -132,8 +144,8 @@ export function WhaleActivityFeed() {
       action={
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1 text-[10px] font-bold uppercase">
-            <Radio className={cn("h-3 w-3", connected ? "text-bull animate-pulse" : "text-bear")} />
-            <span className={connected ? "text-bull" : "text-bear"}>{connected ? "Live" : "Off"}</span>
+            <Radio className={cn("h-3 w-3", anyConnected ? "text-bull animate-pulse" : "text-bear")} />
+            <span className={anyConnected ? "text-bull" : "text-bear"}>{anyConnected ? "Live" : "Off"}</span>
           </span>
           <button
             onClick={toggleMuted}
@@ -195,6 +207,46 @@ export function WhaleActivityFeed() {
             </div>
           </div>
 
+          {/* Exchange filter + per-exchange connection status */}
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            <button
+              onClick={() => setExchangeFilter("ALL")}
+              className={cn(
+                "rounded-full px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase transition-colors border",
+                exchangeFilter === "ALL"
+                  ? "border-[var(--neon-purple)]/60 bg-[var(--neon-purple)]/20 text-[var(--neon-purple)]"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              All ({merged.length})
+            </button>
+            {EXCHANGES.map((ex) => {
+              const meta = EXCHANGE_META[ex];
+              const active = exchangeFilter === ex;
+              const count = merged.filter((t) => t.exchange === ex).length;
+              const live = status[ex];
+              return (
+                <button
+                  key={ex}
+                  onClick={() => setExchangeFilter(ex)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase transition-colors border",
+                    active ? "bg-card text-foreground" : "border-border text-muted-foreground hover:text-foreground",
+                  )}
+                  style={active ? { borderColor: meta.color, boxShadow: `0 0 8px ${meta.color}33` } : undefined}
+                  title={`${meta.label} · ${live ? "connected" : "reconnecting"}`}
+                >
+                  <span
+                    className={cn("h-1.5 w-1.5 rounded-full", live ? "animate-pulse" : "opacity-40")}
+                    style={{ background: live ? meta.color : "#ef4444" }}
+                  />
+                  <span style={active ? { color: meta.color } : undefined}>{meta.label}</span>
+                  <span className="opacity-70">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+
           {filtered.length === 0 ? (
             <EmptyState label="Waiting for whale trades… they will appear here in seconds." />
           ) : (
@@ -203,6 +255,7 @@ export function WhaleActivityFeed() {
             <thead className="sticky top-0 bg-card/95 backdrop-blur">
               <tr className="border-b border-border text-[10px] uppercase tracking-wide text-muted-foreground">
                 <th className="px-3 py-2 text-left font-medium">Time</th>
+                <th className="px-2 py-2 text-left font-medium">Exch</th>
                 <th className="px-3 py-2 text-left font-medium">Asset</th>
                 <th className="px-3 py-2 text-left font-medium">Side</th>
                 <th className="px-3 py-2 text-right font-medium">Price</th>
@@ -210,9 +263,20 @@ export function WhaleActivityFeed() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((t) => (
+              {filtered.map((t) => {
+                const meta = EXCHANGE_META[t.exchange];
+                return (
                 <tr key={t.id} className="border-b border-border/40 hover:bg-card-hover">
                   <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{ago(t.tradeTime)} ago</td>
+                  <td className="px-2 py-2">
+                    <span
+                      className="inline-block rounded px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase"
+                      style={{ background: `${meta.color}22`, color: meta.color, border: `1px solid ${meta.color}55` }}
+                      title={meta.label}
+                    >
+                      {meta.label.slice(0, 3)}
+                    </span>
+                  </td>
                   <td className="px-3 py-2 font-mono font-bold">{t.asset}</td>
                   <td className="px-3 py-2">
                     <span className={cn("inline-flex items-center gap-1 font-mono text-[11px] font-bold", t.side === "BUY" ? "text-bull" : "text-bear")}>
@@ -227,7 +291,8 @@ export function WhaleActivityFeed() {
                     {fmtUsd(t.sizeUsd)}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

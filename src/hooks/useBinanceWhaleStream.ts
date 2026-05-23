@@ -11,7 +11,7 @@ export type WhaleTrade = {
   quantity: number;
   sizeUsd: number;
   tradeTime: number;
-  exchange: "binance";
+  exchange: "binance" | "bybit" | "okx" | "hyperliquid";
 };
 
 const ASSET_MAP: Record<string, WhaleAsset> = {

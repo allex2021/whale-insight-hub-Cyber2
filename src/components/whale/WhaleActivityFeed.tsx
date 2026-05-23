@@ -3,10 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowDownRight, ArrowUpRight, Radio, Volume2, VolumeX } from "lucide-react";
 import { Panel } from "./Panel";
 import { EmptyState } from "./StateView";
-import { useBinanceWhaleStream, type WhaleTrade, type WhaleAsset } from "@/hooks/useBinanceWhaleStream";
+import { type WhaleTrade, type WhaleAsset } from "@/hooks/useBinanceWhaleStream";
+import { useMultiExchangeWhaleStream } from "@/hooks/useMultiExchangeWhaleStream";
+import { EXCHANGE_META, type ExchangeId } from "@/lib/whale/multiExchangeStream";
 import { useSymbolFilter } from "@/hooks/useSymbolFilter";
 import { useWhaleAlertSound } from "@/hooks/useWhaleAlertSound";
 import { cn } from "@/lib/utils";
+
 
 const SYMBOL_MAP: Record<string, WhaleAsset> = {
   BTCUSDT: "BTC", ETHUSDT: "ETH", SOLUSDT: "SOL", LTCUSDT: "LTC",
@@ -62,17 +65,20 @@ function ago(ts: number) {
   return `${Math.floor(s / 3600)}h`;
 }
 
+const EXCHANGES: ExchangeId[] = ["binance", "bybit", "okx", "hyperliquid"];
+
 export function WhaleActivityFeed() {
   const [tier, setTier] = useState<number>(100_000);
   const [mounted, setMounted] = useState(false);
-  const { trades: liveTrades, connected } = useBinanceWhaleStream(tier, 80);
+  const [exchangeFilter, setExchangeFilter] = useState<ExchangeId | "ALL">("ALL");
+  const { trades: liveTrades, status } = useMultiExchangeWhaleStream(tier, 200);
   const { selected } = useSymbolFilter();
   const { playPump, playDump, muted, toggleMuted } = useWhaleAlertSound();
   const seenIds = useRef<Set<string>>(new Set());
 
   useEffect(() => { setMounted(true); }, []);
 
-  // Bootstrap with recent REST trades so the feed is never empty on mount.
+  // Bootstrap with recent REST trades (Binance) so the feed is never empty on mount.
   const { data: seedTrades } = useQuery({
     queryKey: ["whale-seed", tier],
     queryFn: () => fetchRecentWhales(tier),
@@ -84,7 +90,7 @@ export function WhaleActivityFeed() {
     const map = new Map<string, WhaleTrade>();
     for (const t of liveTrades) map.set(t.id, t);
     for (const t of seedTrades ?? []) if (!map.has(t.id)) map.set(t.id, t);
-    return Array.from(map.values()).sort((a, b) => b.tradeTime - a.tradeTime).slice(0, 120);
+    return Array.from(map.values()).sort((a, b) => b.tradeTime - a.tradeTime).slice(0, 200);
   }, [liveTrades, seedTrades]);
 
   // Play buy/sell sound on new live trades only (skip backfill on first mount)
@@ -97,16 +103,22 @@ export function WhaleActivityFeed() {
       if (isFirst) continue;
       if (t.side === "BUY") playPump("pump"); else playDump("dump");
     }
-    if (seenIds.current.size > 500) {
+    if (seenIds.current.size > 800) {
       seenIds.current = new Set(liveTrades.map((t) => t.id));
     }
   }, [liveTrades, playPump, playDump]);
 
 
   const filtered = useMemo(
-    () => merged.filter((t) => selected.includes(t.asset as never)),
-    [merged, selected],
+    () => merged.filter((t) =>
+      selected.includes(t.asset as never) &&
+      (exchangeFilter === "ALL" || t.exchange === exchangeFilter),
+    ),
+    [merged, selected, exchangeFilter],
   );
+
+  const anyConnected = status.binance || status.bybit || status.okx || status.hyperliquid;
+
 
   const stats = useMemo(() => {
     let buys = 0, sells = 0, buyUsd = 0, sellUsd = 0;

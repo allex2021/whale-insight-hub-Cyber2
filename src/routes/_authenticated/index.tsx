@@ -90,6 +90,9 @@ function Dashboard() {
               <LazyMount minHeight={360}><SmartMoneyBoard /></LazyMount>
               <LazyMount minHeight={360}><WhaleDivergence /></LazyMount>
             </div>
+            <div className="rounded-xl border-2 border-[var(--neon-purple)]/30 bg-card/30 p-1 shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+              <LazyMount minHeight={420}><AlertCenter /></LazyMount>
+            </div>
             <LongShortRatio />
             <LazyMount minHeight={280}><CVDPanel /></LazyMount>
             <LazyMount minHeight={320}><OrderBookWalls /></LazyMount>

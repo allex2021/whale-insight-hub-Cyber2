@@ -78,10 +78,6 @@ function Dashboard() {
           <LazyMount minHeight={360}><FundingRateMonitor /></LazyMount>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <LazyMount minHeight={360}><LiquidationHeatmap /></LazyMount>
-          <LazyMount minHeight={360}><FundingRateMonitor /></LazyMount>
-        </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <LazyMount minHeight={360}><OptionsFlow /></LazyMount>

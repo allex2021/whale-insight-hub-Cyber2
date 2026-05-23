@@ -4,9 +4,9 @@ import { useState } from "react";
 import { Panel, Chip } from "./Panel";
 import { cn } from "@/lib/utils";
 
-type Asset = "BTC" | "ETH" | "SOL" | "LTC";
+type Asset = "BTC" | "ETH" | "SOL" | "LTC" | "BNB" | "XRP" | "ADA" | "DOGE" | "AVAX";
 type Period = "5m" | "15m" | "1h" | "4h" | "1d";
-const ASSETS: Asset[] = ["BTC", "ETH", "SOL", "LTC"];
+const ASSETS: Asset[] = ["BTC", "ETH", "SOL", "LTC", "BNB", "XRP", "ADA", "DOGE", "AVAX"];
 
 type Row = {
   asset: Asset;
@@ -37,8 +37,10 @@ export function LongShortRatio() {
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["long-short-ratio", period],
     queryFn: async () => {
-      const rows = await Promise.all(ASSETS.map((a) => fetchRatio(a, period)));
-      return rows;
+      const rows = await Promise.all(
+        ASSETS.map((a) => fetchRatio(a, period).catch(() => null)),
+      );
+      return rows.filter((r): r is Row => r !== null);
     },
     refetchInterval: 30_000,
   });

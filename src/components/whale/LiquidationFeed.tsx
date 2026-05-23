@@ -26,11 +26,14 @@ export function LiquidationFeed() {
   const seenRef = useRef<Set<string>>(new Set());
   const firstRun = useRef(true);
 
-  // Filter by symbol filter
+  // Filter by symbol filter (always allow majors so feed doesn't go empty for unsupported symbols)
+  const allowed = new Set<string>([...selected, "BTC", "ETH", "SOL"]);
   const filtered = useMemo(
-    () => events.filter((e) => selected.includes(e.asset as never) || ["BTC", "ETH", "SOL"].includes(e.asset)),
-    [events, selected],
+    () => events.filter((e) => allowed.has(e.asset)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [events, selected.join(",")],
   );
+
 
   // Aggregate last 60s by side
   const stats = useMemo(() => {

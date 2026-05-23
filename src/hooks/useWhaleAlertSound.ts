@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getSoundSettings, type SoundKey } from "./useSoundSettings";
 
 const STORAGE_KEY = "whale-alert-sound-muted";
 
 /**
  * Web Audio beeps — no asset file, no API call.
- * - playPump   : LONG / BUY whale (high beep, 900Hz)
- * - playDump   : SHORT / SELL whale (low beep, 380Hz)
- * - playUrgent : breaking news (triple beep, 1200Hz)
+ * Each beep type can be muted individually via useSoundSettings.
+ * The legacy global mute (toggleMuted) still works as a master switch.
  */
 export function useWhaleAlertSound() {
   const ctxRef = useRef<AudioContext | null>(null);
@@ -39,14 +39,13 @@ export function useWhaleAlertSound() {
     return ctx;
   }, []);
 
-  // Pleasant tonal note with harmonic overtone + soft attack/release envelope.
   const noteAt = useCallback(
     (
       ctx: AudioContext,
       freq: number,
       startOffset: number,
-      duration = 0.22,
-      volume = 0.16,
+      duration: number,
+      volume: number,
       type: OscillatorType = "triangle",
     ) => {
       const t0 = ctx.currentTime + startOffset;
@@ -56,7 +55,6 @@ export function useWhaleAlertSound() {
       gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
       gain.connect(ctx.destination);
 
-      // Fundamental
       const osc = ctx.createOscillator();
       osc.type = type;
       osc.frequency.setValueAtTime(freq, t0);
@@ -64,7 +62,6 @@ export function useWhaleAlertSound() {
       osc.start(t0);
       osc.stop(t0 + duration + 0.04);
 
-      // Soft harmonic for richness
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.type = "sine";
@@ -79,38 +76,46 @@ export function useWhaleAlertSound() {
     [],
   );
 
-  // LONG / BUY — rising two-note chime (C5 → G5)
-  const playPump = useCallback(() => {
-    if (muted) return;
+  const shouldPlay = useCallback((key: SoundKey): { ok: boolean; vol: number } => {
+    if (muted) return { ok: false, vol: 0 };
+    const s = getSoundSettings();
+    return { ok: !!s.enabled[key], vol: s.volume };
+  }, [muted]);
+
+  // LONG / BUY — rising chime (C5 → G5). Accepts override key (e.g. "liquidation").
+  const playPump = useCallback((key: SoundKey = "pump") => {
+    const { ok, vol } = shouldPlay(key);
+    if (!ok) return;
     const ctx = ensureCtx(); if (!ctx) return;
     try {
-      noteAt(ctx, 523.25, 0, 0.18, 0.16);    // C5
-      noteAt(ctx, 783.99, 0.11, 0.26, 0.18); // G5
+      noteAt(ctx, 523.25, 0, 0.18, 0.16 * vol);
+      noteAt(ctx, 783.99, 0.11, 0.26, 0.18 * vol);
     } catch { /* ignore */ }
-  }, [muted, ensureCtx, noteAt]);
+  }, [shouldPlay, ensureCtx, noteAt]);
 
-  // SHORT / SELL — falling two-note chime (G4 → C4)
-  const playDump = useCallback(() => {
-    if (muted) return;
+  // SHORT / SELL — falling chime (G4 → C4)
+  const playDump = useCallback((key: SoundKey = "dump") => {
+    const { ok, vol } = shouldPlay(key);
+    if (!ok) return;
     const ctx = ensureCtx(); if (!ctx) return;
     try {
-      noteAt(ctx, 392.0, 0, 0.18, 0.16);    // G4
-      noteAt(ctx, 261.63, 0.11, 0.28, 0.18); // C4
+      noteAt(ctx, 392.0, 0, 0.18, 0.16 * vol);
+      noteAt(ctx, 261.63, 0.11, 0.28, 0.18 * vol);
     } catch { /* ignore */ }
-  }, [muted, ensureCtx, noteAt]);
+  }, [shouldPlay, ensureCtx, noteAt]);
 
-  // URGENT — three-note alert (E5-E5-A5) with brighter timbre
+  // URGENT — three-note alert (E5-E5-A5)
   const playUrgent = useCallback(() => {
-    if (muted) return;
+    const { ok, vol } = shouldPlay("urgent");
+    if (!ok) return;
     const ctx = ensureCtx(); if (!ctx) return;
     try {
-      noteAt(ctx, 659.25, 0,    0.14, 0.20, "square");
-      noteAt(ctx, 659.25, 0.18, 0.14, 0.20, "square");
-      noteAt(ctx, 880.0,  0.38, 0.30, 0.22, "square");
+      noteAt(ctx, 659.25, 0,    0.14, 0.20 * vol, "square");
+      noteAt(ctx, 659.25, 0.18, 0.14, 0.20 * vol, "square");
+      noteAt(ctx, 880.0,  0.38, 0.30, 0.22 * vol, "square");
     } catch { /* ignore */ }
-  }, [muted, ensureCtx, noteAt]);
+  }, [shouldPlay, ensureCtx, noteAt]);
 
-  // Backwards-compat alias
   const playBeep = playPump;
 
   return { playBeep, playPump, playDump, playUrgent, muted, toggleMuted };

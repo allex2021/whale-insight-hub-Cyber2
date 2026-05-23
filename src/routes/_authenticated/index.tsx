@@ -13,6 +13,13 @@ import { AITradingSignals } from "@/components/whale/AITradingSignals";
 import { AlertCenter } from "@/components/whale/AlertCenter";
 import { LongShortRatio } from "@/components/whale/LongShortRatio";
 import { SupportResistance } from "@/components/whale/SupportResistance";
+import { MacroBar } from "@/components/whale/MacroBar";
+import { SymbolFilter } from "@/components/whale/SymbolFilter";
+import { OrderBookWalls } from "@/components/whale/OrderBookWalls";
+import { CVDPanel } from "@/components/whale/CVDPanel";
+import { OpenInterestTracker } from "@/components/whale/OpenInterestTracker";
+import { LiquidationFeed } from "@/components/whale/LiquidationFeed";
+import { StablecoinSupply } from "@/components/whale/StablecoinSupply";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -39,14 +46,25 @@ function Dashboard() {
     <div className="min-h-screen text-foreground">
       <HeaderBar />
       <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-6 lg:px-8">
+        <MacroBar />
+        <SymbolFilter />
+
         <WhaleTracker />
 
         <LongShortRatio />
 
+        <OrderBookWalls />
+
+        <CVDPanel />
+
+        <OpenInterestTracker />
+
         <SupportResistance />
 
-
-
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <LiquidationFeed />
+          <StablecoinSupply />
+        </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <LiquidationHeatmap />

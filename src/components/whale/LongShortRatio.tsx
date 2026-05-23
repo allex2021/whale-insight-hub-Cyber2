@@ -3,10 +3,11 @@ import { Scale, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Panel, Chip } from "./Panel";
 import { cn } from "@/lib/utils";
+import { useSymbolFilter, type SymbolKey } from "@/hooks/useSymbolFilter";
 
-type Asset = "BTC" | "ETH" | "SOL" | "LTC" | "BNB" | "XRP" | "ADA" | "DOGE" | "AVAX";
+type Asset = SymbolKey;
 type Period = "5m" | "15m" | "1h" | "4h" | "1d";
-const ASSETS: Asset[] = ["BTC", "ETH", "SOL", "LTC", "BNB", "XRP", "ADA", "DOGE", "AVAX"];
+
 
 type Row = {
   asset: Asset;

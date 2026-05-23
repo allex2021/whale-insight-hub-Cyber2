@@ -63,12 +63,27 @@ function ago(ts: number) {
 
 export function WhaleActivityFeed() {
   const [tier, setTier] = useState<number>(100_000);
-  const { trades, connected } = useBinanceWhaleStream(tier, 80);
+  const { trades: liveTrades, connected } = useBinanceWhaleStream(tier, 80);
   const { selected } = useSymbolFilter();
 
+  // Bootstrap with recent REST trades so the feed is never empty on mount.
+  const { data: seedTrades } = useQuery({
+    queryKey: ["whale-seed", tier],
+    queryFn: () => fetchRecentWhales(tier),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+
+  const merged = useMemo<WhaleTrade[]>(() => {
+    const map = new Map<string, WhaleTrade>();
+    for (const t of liveTrades) map.set(t.id, t);
+    for (const t of seedTrades ?? []) if (!map.has(t.id)) map.set(t.id, t);
+    return Array.from(map.values()).sort((a, b) => b.tradeTime - a.tradeTime).slice(0, 120);
+  }, [liveTrades, seedTrades]);
+
   const filtered = useMemo(
-    () => trades.filter((t) => selected.includes(t.asset as never)),
-    [trades, selected],
+    () => merged.filter((t) => selected.includes(t.asset as never)),
+    [merged, selected],
   );
 
   return (

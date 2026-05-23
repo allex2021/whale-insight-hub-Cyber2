@@ -20,10 +20,10 @@ const Input = z.object({
 
 const Output = z.object({
   verdict: z.enum(["AGREE", "DISAGREE", "UPGRADE", "DOWNGRADE", "CAUTION"]),
-  summary: z.string().max(400),
-  keyRisk: z.string().max(200),
-  bullishFactors: z.array(z.string().max(120)).max(5),
-  bearishFactors: z.array(z.string().max(120)).max(5),
+  summary: z.string().transform((s) => s.slice(0, 600)),
+  keyRisk: z.string().transform((s) => s.slice(0, 400)),
+  bullishFactors: z.array(z.string().transform((s) => s.slice(0, 240))).max(8),
+  bearishFactors: z.array(z.string().transform((s) => s.slice(0, 240))).max(8),
   suggestedConfidence: z.number().min(0).max(100),
 });
 

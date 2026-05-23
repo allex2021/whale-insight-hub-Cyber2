@@ -19,28 +19,47 @@ export type MarketGlobalsDTO = {
 export const fetchMarketGlobals = createServerFn({ method: "GET" }).handler(async (): Promise<MarketGlobalsDTO> => {
   if (cache && Date.now() - cache.at < 60_000) return cache.data;
 
-  const [fngRes, cgRes] = await Promise.all([
-    fetch("https://api.alternative.me/fng/?limit=1"),
-    fetch("https://api.coingecko.com/api/v3/global"),
-  ]);
-  if (!fngRes.ok) throw new Error(`alternative.me ${fngRes.status}`);
-  if (!cgRes.ok) throw new Error(`coingecko ${cgRes.status}`);
-
-  const fng = (await fngRes.json()) as { data?: Array<{ value: string; value_classification: string }> };
-  const cg = (await cgRes.json()) as { data?: { total_market_cap?: { usd?: number }; total_volume?: { usd?: number }; market_cap_percentage?: { btc?: number } } };
-
-  const fngEntry = fng.data?.[0];
-  const d = cg.data;
-  if (!fngEntry || !d) throw new Error("Empty payload from upstream");
-
-  const result: MarketGlobalsDTO = {
-    fearGreed: { value: parseInt(fngEntry.value, 10), label: fngEntry.value_classification },
-    marketCap: d.total_market_cap?.usd ?? 0,
-    btcDominance: d.market_cap_percentage?.btc ?? 0,
-    totalVolume: d.total_volume?.usd ?? 0,
+  const fallback: MarketGlobalsDTO = cache?.data ?? {
+    fearGreed: { value: 50, label: "Neutral" },
+    marketCap: 0,
+    btcDominance: 0,
+    totalVolume: 0,
   };
-  cache = { at: Date.now(), data: result };
-  return result;
+
+  try {
+    const [fngRes, cgRes] = await Promise.all([
+      fetch("https://api.alternative.me/fng/?limit=1").catch(() => null),
+      fetch("https://api.coingecko.com/api/v3/global", {
+        headers: { accept: "application/json" },
+      }).catch(() => null),
+    ]);
+
+    const result: MarketGlobalsDTO = { ...fallback };
+
+    if (fngRes?.ok) {
+      const fng = (await fngRes.json()) as { data?: Array<{ value: string; value_classification: string }> };
+      const e = fng.data?.[0];
+      if (e) result.fearGreed = { value: parseInt(e.value, 10), label: e.value_classification };
+    }
+
+    if (cgRes?.ok) {
+      const cg = (await cgRes.json()) as { data?: { total_market_cap?: { usd?: number }; total_volume?: { usd?: number }; market_cap_percentage?: { btc?: number } } };
+      const d = cg.data;
+      if (d) {
+        result.marketCap = d.total_market_cap?.usd ?? result.marketCap;
+        result.btcDominance = d.market_cap_percentage?.btc ?? result.btcDominance;
+        result.totalVolume = d.total_volume?.usd ?? result.totalVolume;
+      }
+    } else if (cgRes) {
+      console.warn(`coingecko /global ${cgRes.status} — using fallback`);
+    }
+
+    cache = { at: Date.now(), data: result };
+    return result;
+  } catch (err) {
+    console.error("fetchMarketGlobals failed:", err);
+    return fallback;
+  }
 });
 
 // ============ NEWS (CoinDesk Data API — no auth required) ============

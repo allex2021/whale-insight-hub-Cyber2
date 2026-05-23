@@ -42,8 +42,12 @@ export interface NewsItem {
     verdict: "BULLISH" | "BEARISH" | "NEUTRAL";
     impact: "HIGH" | "MEDIUM" | "LOW";
     summary: string;
+    confidence?: number;
+    assets?: string[];
+    aiPowered?: boolean;
   };
 }
+
 
 export interface FundingRow {
   symbol: Symbol;

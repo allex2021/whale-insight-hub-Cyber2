@@ -64,6 +64,7 @@ export const fetchMarketGlobals = createServerFn({ method: "GET" }).handler(asyn
 
 // ============ NEWS (CoinDesk Data API — no auth required) ============
 let newsCache: { at: number; data: NewsItem[] } | null = null;
+const NEWS_TTL_MS = 5 * 60_000; // 5 min — AI calls are expensive
 
 type CoinDeskNewsRow = {
   ID?: number;
@@ -78,40 +79,158 @@ type CoinDeskNewsRow = {
   KEYWORDS?: string;
 };
 
+function heuristicAnalyze(p: CoinDeskNewsRow): NewsItem["ai"] {
+  const up = Number(p.UPVOTES ?? 0);
+  const down = Number(p.DOWNVOTES ?? 0);
+  const net = up - down;
+  const title = (p.TITLE ?? "").toLowerCase();
+  const bullishKw = /(surge|rally|soar|gain|bullish|jump|breakout|approve|adopt|all-time)/i.test(title);
+  const bearishKw = /(crash|plunge|drop|bearish|sell-off|hack|ban|sue|liquidat|reject)/i.test(title);
+  const sentiment = String(p.SENTIMENT ?? "").toUpperCase();
+  const verdict: "BULLISH" | "BEARISH" | "NEUTRAL" =
+    sentiment === "POSITIVE" || (bullishKw && !bearishKw) ? "BULLISH" :
+    sentiment === "NEGATIVE" || (bearishKw && !bullishKw) ? "BEARISH" :
+    net > 0 ? "BULLISH" : net < 0 ? "BEARISH" : "NEUTRAL";
+  const score = Math.min(10, Math.max(1, Math.round(5 + (bullishKw ? 2 : 0) - (bearishKw ? 2 : 0) + Math.sign(net))));
+  const impact: "HIGH" | "MEDIUM" | "LOW" = score >= 8 ? "HIGH" : score >= 5 ? "MEDIUM" : "LOW";
+  return {
+    score, verdict, impact,
+    summary: (p.BODY ?? "").slice(0, 140) || `Keywords: ${p.KEYWORDS ?? "general"}`,
+    confidence: 50,
+    assets: [],
+    aiPowered: false,
+  };
+}
+
+type AIAnalysisResult = {
+  id: string;
+  score: number;
+  verdict: "BULLISH" | "BEARISH" | "NEUTRAL";
+  impact: "HIGH" | "MEDIUM" | "LOW";
+  confidence: number;
+  assets: string[];
+  summary: string;
+};
+
+async function batchAnalyzeWithAI(items: { id: string; title: string; body?: string }[]): Promise<Map<string, AIAnalysisResult>> {
+  const out = new Map<string, AIAnalysisResult>();
+  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
+  if (!LOVABLE_API_KEY || items.length === 0) return out;
+
+  const payload = items.map((it) => ({ id: it.id, title: it.title, snippet: (it.body ?? "").slice(0, 280) }));
+
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a crypto market analyst. For each news item, return: " +
+              "score (1-10 market significance), verdict (BULLISH/BEARISH/NEUTRAL), " +
+              "impact (HIGH/MEDIUM/LOW price impact), confidence (0-100 your conviction), " +
+              "assets (uppercase tickers affected, e.g. ['BTC','ETH'], empty if macro), " +
+              "summary (one sentence, <=140 chars, focused on trade implication). " +
+              "Be decisive — avoid NEUTRAL unless truly mixed. Hacks/SEC enforcement/bans = BEARISH. ETF approvals/institutional adoption = BULLISH.",
+          },
+          { role: "user", content: `Analyze these ${payload.length} headlines:\n${JSON.stringify(payload)}` },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "emit_analyses",
+            description: "Emit sentiment analysis for each news item.",
+            parameters: {
+              type: "object",
+              properties: {
+                analyses: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      id: { type: "string" },
+                      score: { type: "number" },
+                      verdict: { type: "string", enum: ["BULLISH", "BEARISH", "NEUTRAL"] },
+                      impact: { type: "string", enum: ["HIGH", "MEDIUM", "LOW"] },
+                      confidence: { type: "number" },
+                      assets: { type: "array", items: { type: "string" } },
+                      summary: { type: "string" },
+                    },
+                    required: ["id", "score", "verdict", "impact", "confidence", "assets", "summary"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ["analyses"],
+              additionalProperties: false,
+            },
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "emit_analyses" } },
+      }),
+    });
+    if (!res.ok) {
+      console.warn(`News AI gateway ${res.status} — falling back to heuristic`);
+      return out;
+    }
+    const json = await res.json();
+    const call = json.choices?.[0]?.message?.tool_calls?.[0];
+    if (!call) return out;
+    const args = JSON.parse(call.function.arguments) as { analyses: AIAnalysisResult[] };
+    for (const a of args.analyses ?? []) out.set(String(a.id), a);
+  } catch (e) {
+    console.error("batchAnalyzeWithAI failed:", e);
+  }
+  return out;
+}
+
 export const fetchNewsServer = createServerFn({ method: "GET" }).handler(async (): Promise<NewsItem[]> => {
-  if (newsCache && Date.now() - newsCache.at < 60_000) return newsCache.data;
+  if (newsCache && Date.now() - newsCache.at < NEWS_TTL_MS) return newsCache.data;
   try {
     const r = await fetch("https://data-api.coindesk.com/news/v1/article/list?lang=EN&limit=20");
     if (!r.ok) throw new Error(`coindesk ${r.status}`);
     const j = (await r.json()) as { Data?: CoinDeskNewsRow[] };
-    const rows = Array.isArray(j?.Data) ? j.Data : [];
-    const data: NewsItem[] = rows.slice(0, 20).map((p, index) => {
-      const up = Number(p.UPVOTES ?? 0);
-      const down = Number(p.DOWNVOTES ?? 0);
-      const net = up - down;
-      const title = (p.TITLE ?? "Untitled").toLowerCase();
-      const bullishKw = /(surge|rally|soar|gain|bullish|jump|breakout|approve|adopt|all-time)/i.test(title);
-      const bearishKw = /(crash|plunge|drop|bearish|sell-off|hack|ban|sue|liquidat|reject)/i.test(title);
-      const sentiment = String(p.SENTIMENT ?? "").toUpperCase();
-      const verdict: "BULLISH" | "BEARISH" | "NEUTRAL" =
-        sentiment === "POSITIVE" || (bullishKw && !bearishKw) ? "BULLISH" :
-        sentiment === "NEGATIVE" || (bearishKw && !bullishKw) ? "BEARISH" :
-        net > 0 ? "BULLISH" : net < 0 ? "BEARISH" : "NEUTRAL";
-      const score = Math.min(10, Math.max(1, Math.round(5 + (bullishKw ? 2 : 0) - (bearishKw ? 2 : 0) + Math.sign(net))));
-      const impact: "HIGH" | "MEDIUM" | "LOW" = score >= 8 ? "HIGH" : score >= 5 ? "MEDIUM" : "LOW";
+    const rows = (Array.isArray(j?.Data) ? j.Data : []).slice(0, 20);
+
+    // Batched Gemini analysis on top 12 headlines (single AI call)
+    const top = rows.slice(0, 12).map((p, i) => ({
+      id: String(p.ID ?? i),
+      title: p.TITLE ?? "Untitled",
+      body: p.BODY ?? "",
+    }));
+    const aiMap = await batchAnalyzeWithAI(top);
+
+    const data: NewsItem[] = rows.map((p, index) => {
+      const id = String(p.ID ?? index);
+      const aiRow = aiMap.get(id);
+      const ai: NewsItem["ai"] = aiRow
+        ? {
+            score: Math.round(aiRow.score),
+            verdict: aiRow.verdict,
+            impact: aiRow.impact,
+            summary: aiRow.summary,
+            confidence: Math.round(aiRow.confidence),
+            assets: aiRow.assets,
+            aiPowered: true,
+          }
+        : heuristicAnalyze(p);
       return {
-        id: String(p.ID ?? index),
+        id,
         source: p.SOURCE_DATA?.NAME ?? "CoinDesk",
         title: p.TITLE ?? "Untitled",
         url: p.URL ?? "#",
         publishedAt: (p.PUBLISHED_ON ?? Math.floor(Date.now() / 1000)) * 1000,
-        ai: { score, verdict, impact, summary: (p.BODY ?? "").slice(0, 140) || `Keywords: ${p.KEYWORDS ?? "general"}` },
+        ai,
       };
     });
     newsCache = { at: Date.now(), data };
     return data;
   } catch (error) {
     console.error("Failed to fetch crypto news:", error);
+    if (newsCache) return newsCache.data;
     newsCache = { at: Date.now(), data: [] };
     return [];
   }

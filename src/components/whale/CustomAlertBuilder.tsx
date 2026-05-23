@@ -74,7 +74,7 @@ export function CustomAlertBuilder() {
     <Panel
       title="Custom Alert Builder"
       subtitle="User-defined price + whale-trade alerts · sound + browser notification on trigger"
-      accent="yellow"
+      accent="orange"
       action={
         <button
           onClick={requestNotif}

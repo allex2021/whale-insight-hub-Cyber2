@@ -108,10 +108,26 @@ export function WhaleActivityFeed() {
     [merged, selected],
   );
 
+  const stats = useMemo(() => {
+    let buys = 0, sells = 0, buyUsd = 0, sellUsd = 0;
+    for (const t of filtered) {
+      if (t.side === "BUY") { buys++; buyUsd += t.sizeUsd; }
+      else { sells++; sellUsd += t.sizeUsd; }
+    }
+    const total = buys + sells;
+    const buyPct = total ? (buys / total) * 100 : 50;
+    const sellPct = total ? (sells / total) * 100 : 50;
+    const totalUsd = buyUsd + sellUsd;
+    const buyUsdPct = totalUsd ? (buyUsd / totalUsd) * 100 : 50;
+    const sellUsdPct = totalUsd ? (sellUsd / totalUsd) * 100 : 50;
+    const ratio = sells ? buys / sells : buys > 0 ? Infinity : 0;
+    return { buys, sells, buyPct, sellPct, buyUsd, sellUsd, buyUsdPct, sellUsdPct, ratio };
+  }, [filtered]);
+
   return (
     <Panel
       title="Live Whale Activity"
-      subtitle={`${mounted ? filtered.length : 0} trades · persisted across refresh`}
+      subtitle={`${mounted ? filtered.length : 0} trades · L/S ${mounted ? stats.buys : 0}/${mounted ? stats.sells : 0}`}
       accent="purple"
       action={
         <div className="flex items-center gap-2">
@@ -143,9 +159,45 @@ export function WhaleActivityFeed() {
         </div>
       }
     >
-      {filtered.length === 0 ? (
-        <EmptyState label="Waiting for whale trades… they will appear here in seconds." />
+      {!mounted ? (
+        <EmptyState label="Loading whale feed…" />
       ) : (
+        <>
+          <div className="mb-3 rounded-lg border border-border bg-gradient-to-br from-card to-secondary/40 p-3">
+            <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wide">
+              <span className="flex items-center gap-1 text-bull">
+                <ArrowUpRight className="h-3 w-3" /> Long {stats.buys}
+              </span>
+              <span className="font-mono text-muted-foreground">
+                Ratio {stats.ratio === Infinity ? "∞" : stats.ratio.toFixed(2)}x
+              </span>
+              <span className="flex items-center gap-1 text-bear">
+                Short {stats.sells} <ArrowDownRight className="h-3 w-3" />
+              </span>
+            </div>
+            <div className="mb-1 flex items-center justify-between font-mono text-[11px]">
+              <span className="text-bull font-semibold">{stats.buyPct.toFixed(1)}%</span>
+              <span className="text-muted-foreground text-[9px] uppercase">by count</span>
+              <span className="text-bear font-semibold">{stats.sellPct.toFixed(1)}%</span>
+            </div>
+            <div className="mb-2 flex h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="h-full bg-gradient-to-r from-bull to-bull/60" style={{ width: `${stats.buyPct}%` }} />
+              <div className="h-full bg-gradient-to-r from-bear/60 to-bear" style={{ width: `${stats.sellPct}%` }} />
+            </div>
+            <div className="mb-1 flex items-center justify-between font-mono text-[11px]">
+              <span className="text-bull font-semibold">{fmtUsd(stats.buyUsd)} ({stats.buyUsdPct.toFixed(1)}%)</span>
+              <span className="text-muted-foreground text-[9px] uppercase">by volume</span>
+              <span className="text-bear font-semibold">({stats.sellUsdPct.toFixed(1)}%) {fmtUsd(stats.sellUsd)}</span>
+            </div>
+            <div className="flex h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="h-full bg-gradient-to-r from-bull to-bull/60" style={{ width: `${stats.buyUsdPct}%` }} />
+              <div className="h-full bg-gradient-to-r from-bear/60 to-bear" style={{ width: `${stats.sellUsdPct}%` }} />
+            </div>
+          </div>
+
+          {filtered.length === 0 ? (
+            <EmptyState label="Waiting for whale trades… they will appear here in seconds." />
+          ) : (
         <div className="max-h-[420px] overflow-y-auto -mx-4">
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-card/95 backdrop-blur">

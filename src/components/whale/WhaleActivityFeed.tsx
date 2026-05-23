@@ -231,6 +231,8 @@ export function WhaleActivityFeed() {
             </tbody>
           </table>
         </div>
+          )}
+        </>
       )}
     </Panel>
   );

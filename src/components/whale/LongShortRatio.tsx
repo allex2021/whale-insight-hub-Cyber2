@@ -4,9 +4,9 @@ import { useState } from "react";
 import { Panel, Chip } from "./Panel";
 import { cn } from "@/lib/utils";
 
-type Asset = "BTC" | "ETH" | "SOL" | "LTC";
+type Asset = "BTC" | "ETH" | "SOL" | "LTC" | "BNB" | "XRP" | "ADA" | "DOGE" | "AVAX";
 type Period = "5m" | "15m" | "1h" | "4h" | "1d";
-const ASSETS: Asset[] = ["BTC", "ETH", "SOL", "LTC"];
+const ASSETS: Asset[] = ["BTC", "ETH", "SOL", "LTC", "BNB", "XRP", "ADA", "DOGE", "AVAX"];
 
 type Row = {
   asset: Asset;

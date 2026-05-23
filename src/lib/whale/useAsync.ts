@@ -38,10 +38,26 @@ export function useAsync<T>(
     if (opts.refreshMs) {
       interval = setInterval(() => setTick((t) => t + 1), opts.refreshMs);
     }
+    // Refresh when tab becomes visible / window regains focus
+    // (browsers throttle setInterval on background tabs → data gets stale).
+    const onVisible = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        setTick((t) => t + 1);
+      }
+    };
+    const onFocus = () => setTick((t) => t + 1);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisible);
+      window.addEventListener("focus", onFocus);
+    }
     return () => {
       cancelled = true;
       ctrl.abort();
       if (interval) clearInterval(interval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisible);
+        window.removeEventListener("focus", onFocus);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, tick]);

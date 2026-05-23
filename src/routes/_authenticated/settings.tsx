@@ -2,8 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Save, Send } from "lucide-react";
+import { ArrowLeft, Save, Send, Volume2 } from "lucide-react";
 import { getMySettings, saveMySettings, sendTelegramTest } from "@/lib/whale/settings.functions";
+import { useSoundSettings, type SoundKey } from "@/hooks/useSoundSettings";
+import { useWhaleAlertSound } from "@/hooks/useWhaleAlertSound";
+
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings · Whale Intelligence Pro" }] }),
@@ -93,6 +96,9 @@ function SettingsPage() {
               </label>
             </section>
 
+            <SoundSettingsSection />
+
+
             <section className="rounded-xl border border-border bg-card/60 p-5 space-y-4">
               <h2 className="text-sm font-bold">📨 Telegram delivery</h2>
               <p className="text-[11px] text-muted-foreground">
@@ -132,6 +138,74 @@ function SettingsPage() {
     </div>
   );
 }
+
+const SOUND_ROWS: { key: SoundKey; label: string; desc: string }[] = [
+  { key: "pump", label: "Whale BUY / Pump", desc: "Rising chime when a LONG whale appears" },
+  { key: "dump", label: "Whale SELL / Dump", desc: "Falling chime when a SHORT whale appears" },
+  { key: "urgent", label: "Urgent News", desc: "Triple beep on high-impact news (score ≥ 8)" },
+  { key: "liquidation", label: "Big Liquidation", desc: "Beep on liquidations ≥ $1M" },
+];
+
+function SoundSettingsSection() {
+  const { settings, setEnabled, setVolume } = useSoundSettings();
+  const { playPump, playDump, playUrgent } = useWhaleAlertSound();
+
+  const test = (k: SoundKey) => {
+    if (k === "urgent") playUrgent();
+    else if (k === "dump") playDump(k);
+    else playPump(k);
+  };
+
+  return (
+    <section className="rounded-xl border border-border bg-card/60 p-5 space-y-4">
+      <div className="flex items-center gap-2">
+        <Volume2 className="h-4 w-4 text-[var(--neon-purple)]" />
+        <h2 className="text-sm font-bold">Sound alerts</h2>
+      </div>
+
+      <label className="block">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Master volume</span>
+          <span className="font-mono text-xs">{Math.round(settings.volume * 100)}%</span>
+        </div>
+        <input
+          type="range" min={0} max={100} value={settings.volume * 100}
+          onChange={(e) => setVolume(Number(e.target.value) / 100)}
+          className="mt-1 w-full accent-[var(--neon-purple)]"
+        />
+      </label>
+
+      <div className="space-y-2">
+        {SOUND_ROWS.map((r) => (
+          <div key={r.key} className="flex items-center justify-between gap-3 rounded-md border border-border bg-secondary/40 px-3 py-2">
+            <div>
+              <div className="text-xs font-semibold">{r.label}</div>
+              <div className="text-[10px] text-muted-foreground">{r.desc}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => test(r.key)}
+                className="rounded border border-border bg-secondary px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground hover:border-border-bright hover:text-foreground"
+              >
+                Test
+              </button>
+              <label className="inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.enabled[r.key]}
+                  onChange={(e) => setEnabled(r.key, e.target.checked)}
+                  className="h-4 w-4 accent-[var(--neon-blue)]"
+                />
+              </label>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 
 function Field({ label, value, onChange, type = "text", placeholder }: {
   label: string; value: string | number; onChange: (v: string | number) => void; type?: string; placeholder?: string;

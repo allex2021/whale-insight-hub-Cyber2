@@ -3,10 +3,11 @@ import { Scale, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Panel, Chip } from "./Panel";
 import { cn } from "@/lib/utils";
+import { useSymbolFilter, type SymbolKey } from "@/hooks/useSymbolFilter";
 
-type Asset = "BTC" | "ETH" | "SOL" | "LTC" | "BNB" | "XRP" | "ADA" | "DOGE" | "AVAX";
+type Asset = SymbolKey;
 type Period = "5m" | "15m" | "1h" | "4h" | "1d";
-const ASSETS: Asset[] = ["BTC", "ETH", "SOL", "LTC", "BNB", "XRP", "ADA", "DOGE", "AVAX"];
+
 
 type Row = {
   asset: Asset;
@@ -33,17 +34,19 @@ async function fetchRatio(asset: Asset, period: Period): Promise<Row> {
 
 export function LongShortRatio() {
   const [period, setPeriod] = useState<Period>("15m");
+  const { selected } = useSymbolFilter();
 
   const { data, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["long-short-ratio", period],
+    queryKey: ["long-short-ratio", period, selected.join(",")],
     queryFn: async () => {
       const rows = await Promise.all(
-        ASSETS.map((a) => fetchRatio(a, period).catch(() => null)),
+        selected.map((a) => fetchRatio(a, period).catch(() => null)),
       );
       return rows.filter((r): r is Row => r !== null);
     },
     refetchInterval: 30_000,
   });
+
 
   return (
     <Panel

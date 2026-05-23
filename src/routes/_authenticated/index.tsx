@@ -86,6 +86,8 @@ function Dashboard() {
           <LazyMount minHeight={360}><CrossExchangeSignal /></LazyMount>
         </div>
 
+        <LazyMount minHeight={420}><DeribitOptionsPanel /></LazyMount>
+
         <LazyMount minHeight={400}><NewsAI /></LazyMount>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -95,6 +97,7 @@ function Dashboard() {
 
         <LazyMount minHeight={320}><InterMarketCorrelation /></LazyMount>
         <LazyMount minHeight={400}><AITradingSignals /></LazyMount>
+        <LazyMount minHeight={360}><CustomAlertBuilder /></LazyMount>
         <LazyMount minHeight={320}><AlertCenter /></LazyMount>
 
         <footer className="border-t border-border pt-6 pb-10 text-center text-xs text-muted-foreground">

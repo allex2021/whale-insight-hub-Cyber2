@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           direction: string
           entry: number | null
+          evidence: Json | null
           id: string
           model: string
           reasoning: string | null
@@ -34,6 +35,7 @@ export type Database = {
           created_at?: string
           direction: string
           entry?: number | null
+          evidence?: Json | null
           id?: string
           model?: string
           reasoning?: string | null
@@ -47,6 +49,7 @@ export type Database = {
           created_at?: string
           direction?: string
           entry?: number | null
+          evidence?: Json | null
           id?: string
           model?: string
           reasoning?: string | null

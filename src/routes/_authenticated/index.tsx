@@ -6,6 +6,8 @@ import { SymbolFilter } from "@/components/whale/SymbolFilter";
 import { WhaleTracker } from "@/components/whale/WhaleTracker";
 import { LongShortRatio } from "@/components/whale/LongShortRatio";
 import { LazyMount } from "@/components/whale/LazyMount";
+import { PriorityAlertTicker } from "@/components/whale/PriorityAlertTicker";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Below-the-fold panels: code-split + mount on scroll
 const OrderBookWalls = lazy(() => import("@/components/whale/OrderBookWalls").then(m => ({ default: m.OrderBookWalls })));
@@ -51,58 +53,93 @@ export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
 });
 
+const TABS = [
+  { v: "overview", label: "Overview" },
+  { v: "whales", label: "Whale Tracker" },
+  { v: "liquidations", label: "Liquidations" },
+  { v: "options", label: "Options Flow" },
+  { v: "ai", label: "AI Signals" },
+  { v: "macro", label: "Inter-Market" },
+  { v: "alerts", label: "Alerts" },
+] as const;
+
 function Dashboard() {
   return (
     <div className="min-h-screen text-foreground">
       <HeaderBar />
       <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-6 lg:px-8">
-        {/* Above the fold — eager */}
+        <PriorityAlertTicker />
         <MacroBar />
         <SymbolFilter />
-        <WhaleTracker />
-        <LongShortRatio />
 
-        {/* Below the fold — mount on scroll */}
-        <LazyMount minHeight={320}><OrderBookWalls /></LazyMount>
-        <LazyMount minHeight={280}><CVDPanel /></LazyMount>
-        <LazyMount minHeight={320}><OpenInterestTracker /></LazyMount>
-        <LazyMount minHeight={280}><SupportResistance /></LazyMount>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg border border-border bg-card/50 p-1 backdrop-blur-sm">
+            {TABS.map((t) => (
+              <TabsTrigger
+                key={t.v}
+                value={t.v}
+                className="rounded-md px-3 py-1.5 text-xs sm:text-sm font-semibold tracking-wide uppercase data-[state=active]:bg-gradient-to-br data-[state=active]:from-[var(--neon-purple)]/30 data-[state=active]:to-[var(--neon-blue)]/20 data-[state=active]:text-foreground data-[state=active]:shadow-[0_0_15px_rgba(168,85,247,0.25)]"
+              >
+                {t.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <LazyMount minHeight={320}><LiquidationFeed /></LazyMount>
-          <LazyMount minHeight={320}><StablecoinSupply /></LazyMount>
-        </div>
+          <TabsContent value="overview" className="space-y-4 mt-4">
+            <WhaleTracker />
+            <LongShortRatio />
+            <LazyMount minHeight={400}><OnChainPanel /></LazyMount>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <LazyMount minHeight={320}><LiquidationFeed /></LazyMount>
+              <LazyMount minHeight={320}><StablecoinSupply /></LazyMount>
+            </div>
+          </TabsContent>
 
-        <LazyMount minHeight={400}><OnChainPanel /></LazyMount>
+          <TabsContent value="whales" className="space-y-4 mt-4">
+            <WhaleTracker />
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <LazyMount minHeight={360}><SmartMoneyBoard /></LazyMount>
+              <LazyMount minHeight={360}><WhaleDivergence /></LazyMount>
+            </div>
+            <LazyMount minHeight={280}><CVDPanel /></LazyMount>
+            <LazyMount minHeight={320}><OrderBookWalls /></LazyMount>
+          </TabsContent>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <LazyMount minHeight={360}><LiquidationHeatmap /></LazyMount>
-          <LazyMount minHeight={360}><FundingRateMonitor /></LazyMount>
-        </div>
+          <TabsContent value="liquidations" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <LazyMount minHeight={360}><LiquidationHeatmap /></LazyMount>
+              <LazyMount minHeight={360}><FundingRateMonitor /></LazyMount>
+            </div>
+            <LazyMount minHeight={320}><LiquidationFeed /></LazyMount>
+            <LazyMount minHeight={320}><OpenInterestTracker /></LazyMount>
+          </TabsContent>
 
+          <TabsContent value="options" className="space-y-4 mt-4">
+            <LazyMount minHeight={420}><DeribitOptionsPanel /></LazyMount>
+            <LazyMount minHeight={360}><OptionsFlow /></LazyMount>
+          </TabsContent>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <LazyMount minHeight={360}><OptionsFlow /></LazyMount>
-          <LazyMount minHeight={360}><CrossExchangeSignal /></LazyMount>
-        </div>
+          <TabsContent value="ai" className="space-y-4 mt-4">
+            <LazyMount minHeight={400}><AITradingSignals /></LazyMount>
+            <LazyMount minHeight={400}><NewsAI /></LazyMount>
+            <LazyMount minHeight={360}><CrossExchangeSignal /></LazyMount>
+          </TabsContent>
 
-        <LazyMount minHeight={420}><DeribitOptionsPanel /></LazyMount>
+          <TabsContent value="macro" className="space-y-4 mt-4">
+            <LazyMount minHeight={320}><InterMarketCorrelation /></LazyMount>
+            <LazyMount minHeight={280}><SupportResistance /></LazyMount>
+            <LazyMount minHeight={320}><StablecoinSupply /></LazyMount>
+          </TabsContent>
 
-        <LazyMount minHeight={400}><NewsAI /></LazyMount>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <LazyMount minHeight={360}><SmartMoneyBoard /></LazyMount>
-          <LazyMount minHeight={360}><WhaleDivergence /></LazyMount>
-        </div>
-
-        <LazyMount minHeight={320}><InterMarketCorrelation /></LazyMount>
-        <LazyMount minHeight={400}><AITradingSignals /></LazyMount>
-        <LazyMount minHeight={360}><CustomAlertBuilder /></LazyMount>
-        <LazyMount minHeight={320}><AlertCenter /></LazyMount>
+          <TabsContent value="alerts" className="space-y-4 mt-4">
+            <LazyMount minHeight={360}><CustomAlertBuilder /></LazyMount>
+            <LazyMount minHeight={320}><AlertCenter /></LazyMount>
+          </TabsContent>
+        </Tabs>
 
         <footer className="border-t border-border pt-6 pb-10 text-center text-xs text-muted-foreground">
           🐋 <span className="font-bold text-foreground">Whale Intelligence Pro</span> · Powered by <span className="text-[var(--neon-purple)] font-semibold">Allex@Cyber2</span>
-          <div className="mt-1 opacity-60">Live: Binance WebSocket · CoinGecko · Alternative.me · AI via Lovable Gateway (Gemini)</div>
+          <div className="mt-1 opacity-60">Live: Binance WebSocket · CoinGecko · Alternative.me · Deribit · DefiLlama · AI via Lovable Gateway (Gemini)</div>
         </footer>
       </main>
     </div>

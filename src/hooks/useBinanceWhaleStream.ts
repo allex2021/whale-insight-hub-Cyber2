@@ -23,9 +23,31 @@ const SYMBOLS = Object.keys(ASSET_MAP);
 /**
  * Real-time Binance aggregated-trades stream via shared WS multiplex.
  */
+const STORAGE_KEY = "wip:whale-trades:v1";
+const STORAGE_MAX = 200;
+const STORAGE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+
+function loadCached(): WhaleTrade[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as WhaleTrade[];
+    const cutoff = Date.now() - STORAGE_TTL_MS;
+    return arr.filter((t) => t.tradeTime >= cutoff);
+  } catch { return []; }
+}
+
+function persist(trades: WhaleTrade[]) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(trades.slice(0, STORAGE_MAX))); } catch { /* quota */ }
+}
+
 export function useBinanceWhaleStream(minUsd = 100_000, max = 100) {
-  const [trades, setTrades] = useState<WhaleTrade[]>([]);
-  const [connected, setConnected] = useState(true); // multiplex is opaque; assume on
+  const [trades, setTrades] = useState<WhaleTrade[]>(() =>
+    loadCached().filter((t) => t.sizeUsd >= minUsd).slice(0, max),
+  );
+  const [connected, setConnected] = useState(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -47,7 +69,12 @@ export function useBinanceWhaleStream(minUsd = 100_000, max = 100) {
           tradeTime: data.T,
           exchange: "binance",
         };
-        setTrades((prev) => [trade, ...prev].slice(0, max));
+        setTrades((prev) => {
+          if (prev.some((p) => p.id === trade.id)) return prev;
+          const next = [trade, ...prev].slice(0, max);
+          persist(next);
+          return next;
+        });
       }),
     );
     return () => { unsubs.forEach((u) => u()); setConnected(false); };

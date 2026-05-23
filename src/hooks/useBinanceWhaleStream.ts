@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
+export type WhaleAsset = "BTC" | "ETH" | "SOL" | "LTC" | "BNB" | "XRP" | "ADA" | "DOGE" | "AVAX";
+
 export type WhaleTrade = {
   id: string;
-  asset: "BTC" | "ETH" | "SOL" | "LTC";
+  asset: WhaleAsset;
   side: "BUY" | "SELL";
   price: number;
   quantity: number;
@@ -11,10 +13,11 @@ export type WhaleTrade = {
   exchange: "binance";
 };
 
-const STREAMS = ["btcusdt@aggTrade", "ethusdt@aggTrade", "solusdt@aggTrade", "ltcusdt@aggTrade"];
-const ASSET_MAP: Record<string, WhaleTrade["asset"]> = {
+const ASSET_MAP: Record<string, WhaleAsset> = {
   BTCUSDT: "BTC", ETHUSDT: "ETH", SOLUSDT: "SOL", LTCUSDT: "LTC",
+  BNBUSDT: "BNB", XRPUSDT: "XRP", ADAUSDT: "ADA", DOGEUSDT: "DOGE", AVAXUSDT: "AVAX",
 };
+const STREAMS = Object.keys(ASSET_MAP).map((s) => `${s.toLowerCase()}@aggTrade`);
 
 /**
  * Real-time Binance aggregated-trades stream.

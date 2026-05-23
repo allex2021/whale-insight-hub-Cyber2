@@ -9,6 +9,7 @@ import { LazyMount } from "@/components/whale/LazyMount";
 
 // Below-the-fold panels: code-split + mount on scroll
 const OrderBookWalls = lazy(() => import("@/components/whale/OrderBookWalls").then(m => ({ default: m.OrderBookWalls })));
+const OnChainPanel = lazy(() => import("@/components/whale/OnChainPanel").then(m => ({ default: m.OnChainPanel })));
 const CVDPanel = lazy(() => import("@/components/whale/CVDPanel").then(m => ({ default: m.CVDPanel })));
 const OpenInterestTracker = lazy(() => import("@/components/whale/OpenInterestTracker").then(m => ({ default: m.OpenInterestTracker })));
 const SupportResistance = lazy(() => import("@/components/whale/SupportResistance").then(m => ({ default: m.SupportResistance })));
@@ -68,6 +69,13 @@ function Dashboard() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <LazyMount minHeight={320}><LiquidationFeed /></LazyMount>
           <LazyMount minHeight={320}><StablecoinSupply /></LazyMount>
+        </div>
+
+        <LazyMount minHeight={400}><OnChainPanel /></LazyMount>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <LazyMount minHeight={360}><LiquidationHeatmap /></LazyMount>
+          <LazyMount minHeight={360}><FundingRateMonitor /></LazyMount>
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

@@ -1,0 +1,142 @@
+import { useQuery } from "@tanstack/react-query";
+import { Activity, TrendingDown, TrendingUp, Layers } from "lucide-react";
+import { Panel } from "./Panel";
+import { LoadingState, ErrorState } from "./StateView";
+import { cn } from "@/lib/utils";
+
+type Chain = { name: string; tvl: number; tokenSymbol: string | null };
+type DexProtocol = { name: string; total24h: number; change_1d: number; chains: string[] };
+
+type OnChainData = {
+  totalTvl: number;
+  topChains: Chain[];
+  totalDex24h: number;
+  dexChange24h: number;
+  topDex: DexProtocol[];
+};
+
+async function fetchOnChain(): Promise<OnChainData> {
+  const [chainsRes, dexRes] = await Promise.all([
+    fetch("https://api.llama.fi/v2/chains"),
+    fetch("https://api.llama.fi/overview/dexs?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true"),
+  ]);
+  if (!chainsRes.ok) throw new Error(`defillama chains ${chainsRes.status}`);
+  if (!dexRes.ok) throw new Error(`defillama dex ${dexRes.status}`);
+  const chains = (await chainsRes.json()) as Chain[];
+  const dex = await dexRes.json();
+  const totalTvl = chains.reduce((s, c) => s + (c.tvl ?? 0), 0);
+  const topChains = [...chains].sort((a, b) => b.tvl - a.tvl).slice(0, 6);
+  const protocols: DexProtocol[] = (dex.protocols ?? [])
+    .filter((p: DexProtocol) => typeof p.total24h === "number")
+    .sort((a: DexProtocol, b: DexProtocol) => b.total24h - a.total24h)
+    .slice(0, 5);
+  return {
+    totalTvl,
+    topChains,
+    totalDex24h: dex.total24h ?? 0,
+    dexChange24h: dex.change_1d ?? 0,
+    topDex: protocols,
+  };
+}
+
+function fmtUsd(n: number) {
+  if (n >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
+  if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+  return `$${n.toFixed(0)}`;
+}
+
+export function OnChainPanel() {
+  const { data, error, isLoading, refetch } = useQuery({
+    queryKey: ["defillama-onchain"],
+    queryFn: fetchOnChain,
+    refetchInterval: 120_000,
+    staleTime: 90_000,
+  });
+
+  return (
+    <Panel
+      title="On-Chain Layer"
+      subtitle="DeFi TVL · DEX volume · top chains (via DefiLlama)"
+      accent="purple"
+    >
+      {isLoading && !data && <LoadingState label="Fetching on-chain data…" />}
+      {error && !data && <ErrorState error={String(error)} onRetry={() => refetch()} />}
+      {data && (
+        <div className="space-y-4">
+          {/* Top metrics */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded border border-border/60 bg-card/50 p-3">
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+                <Layers className="h-3 w-3" /> Total DeFi TVL
+              </div>
+              <div className="mt-1 font-mono text-xl font-bold text-foreground">{fmtUsd(data.totalTvl)}</div>
+            </div>
+            <div className="rounded border border-border/60 bg-card/50 p-3">
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+                <Activity className="h-3 w-3" /> 24h DEX Volume
+              </div>
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="font-mono text-xl font-bold text-foreground">{fmtUsd(data.totalDex24h)}</span>
+                <span className={cn(
+                  "inline-flex items-center gap-0.5 font-mono text-[11px] font-bold",
+                  data.dexChange24h >= 0 ? "text-bull" : "text-bear",
+                )}>
+                  {data.dexChange24h >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  {data.dexChange24h >= 0 ? "+" : ""}{data.dexChange24h.toFixed(2)}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Top chains by TVL */}
+          <div>
+            <div className="mb-2 text-[10px] uppercase tracking-wide text-muted-foreground">Top Chains by TVL</div>
+            <div className="space-y-1.5">
+              {data.topChains.map((c) => {
+                const pct = (c.tvl / data.totalTvl) * 100;
+                return (
+                  <div key={c.name} className="flex items-center gap-3">
+                    <span className="w-24 truncate font-mono text-[11px] font-semibold text-foreground">{c.name}</span>
+                    <div className="relative h-2 flex-1 overflow-hidden rounded bg-card">
+                      <div
+                        className="absolute inset-y-0 left-0 bg-[var(--neon-purple)]/60"
+                        style={{ width: `${Math.min(pct, 100)}%` }}
+                      />
+                    </div>
+                    <span className="w-20 text-right font-mono text-[11px] text-muted-foreground">{fmtUsd(c.tvl)}</span>
+                    <span className="w-12 text-right font-mono text-[10px] text-[var(--neon-purple)]">{pct.toFixed(1)}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Top DEX */}
+          <div>
+            <div className="mb-2 text-[10px] uppercase tracking-wide text-muted-foreground">Top DEX (24h Volume)</div>
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              {data.topDex.map((d) => (
+                <div key={d.name} className="flex items-center justify-between rounded border border-border/40 bg-card/30 px-2 py-1.5">
+                  <div className="flex flex-col">
+                    <span className="font-mono text-[11px] font-bold text-foreground">{d.name}</span>
+                    <span className="text-[9px] text-muted-foreground">{d.chains?.slice(0, 3).join(" · ")}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono text-[11px] text-foreground">{fmtUsd(d.total24h)}</div>
+                    <div className={cn(
+                      "font-mono text-[10px]",
+                      (d.change_1d ?? 0) >= 0 ? "text-bull" : "text-bear",
+                    )}>
+                      {(d.change_1d ?? 0) >= 0 ? "+" : ""}{(d.change_1d ?? 0).toFixed(1)}%
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </Panel>
+  );
+}

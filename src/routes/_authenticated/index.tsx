@@ -87,6 +87,7 @@ function Dashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 mt-4">
+            <WhaleActivityFeed />
             <WhaleTracker />
             <LongShortRatio />
             <LazyMount minHeight={400}><OnChainPanel /></LazyMount>

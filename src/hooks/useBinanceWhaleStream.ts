@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { subscribeBinanceStream } from "@/lib/whale/binanceStream";
 
 export type WhaleAsset = "BTC" | "ETH" | "SOL" | "LTC" | "BNB" | "XRP" | "ADA" | "DOGE" | "AVAX";
 
@@ -17,101 +18,62 @@ const ASSET_MAP: Record<string, WhaleAsset> = {
   BTCUSDT: "BTC", ETHUSDT: "ETH", SOLUSDT: "SOL", LTCUSDT: "LTC",
   BNBUSDT: "BNB", XRPUSDT: "XRP", ADAUSDT: "ADA", DOGEUSDT: "DOGE", AVAXUSDT: "AVAX",
 };
-const STREAMS = Object.keys(ASSET_MAP).map((s) => `${s.toLowerCase()}@aggTrade`);
+const SYMBOLS = Object.keys(ASSET_MAP);
 
 /**
- * Real-time Binance aggregated-trades stream.
- * Filters trades by minimum USD size and keeps the latest N in memory.
- * Auto-reconnects with exponential backoff.
+ * Real-time Binance aggregated-trades stream via shared WS multiplex.
  */
 export function useBinanceWhaleStream(minUsd = 100_000, max = 100) {
   const [trades, setTrades] = useState<WhaleTrade[]>([]);
-  const [connected, setConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
-  const retryRef = useRef(0);
+  const [connected, setConnected] = useState(true); // multiplex is opaque; assume on
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    let cancelled = false;
-
-    const connect = () => {
-      const url = `wss://stream.binance.com:9443/stream?streams=${STREAMS.join("/")}`;
-      const ws = new WebSocket(url);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        setConnected(true);
-        retryRef.current = 0;
-      };
-
-      ws.onmessage = (ev) => {
-        try {
-          const msg = JSON.parse(ev.data);
-          const d = msg.data;
-          if (!d || !d.s) return;
-          const asset = ASSET_MAP[d.s];
-          if (!asset) return;
-          const price = parseFloat(d.p);
-          const quantity = parseFloat(d.q);
-          const sizeUsd = price * quantity;
-          if (sizeUsd < minUsd) return;
-          const trade: WhaleTrade = {
-            id: `${d.s}-${d.a}`,
-            asset,
-            side: d.m ? "SELL" : "BUY", // m: buyer is market maker => taker sold
-            price,
-            quantity,
-            sizeUsd,
-            tradeTime: d.T,
-            exchange: "binance",
-          };
-          setTrades((prev) => [trade, ...prev].slice(0, max));
-        } catch {
-          /* ignore parse errors */
-        }
-      };
-
-      ws.onerror = () => { /* will close + reconnect */ };
-
-      ws.onclose = () => {
-        setConnected(false);
-        if (cancelled) return;
-        const delay = Math.min(30_000, 1000 * 2 ** retryRef.current);
-        retryRef.current += 1;
-        setTimeout(connect, delay);
-      };
-    };
-
-    connect();
-    return () => {
-      cancelled = true;
-      wsRef.current?.close();
-    };
+    setConnected(true);
+    const unsubs = SYMBOLS.map((sym) =>
+      subscribeBinanceStream("spot", `${sym.toLowerCase()}@aggTrade`, (d) => {
+        const data = d as { s: string; p: string; q: string; a: number; m: boolean; T: number };
+        const asset = ASSET_MAP[data.s];
+        if (!asset) return;
+        const price = parseFloat(data.p);
+        const quantity = parseFloat(data.q);
+        const sizeUsd = price * quantity;
+        if (sizeUsd < minUsd) return;
+        const trade: WhaleTrade = {
+          id: `${data.s}-${data.a}`,
+          asset,
+          side: data.m ? "SELL" : "BUY",
+          price, quantity, sizeUsd,
+          tradeTime: data.T,
+          exchange: "binance",
+        };
+        setTrades((prev) => [trade, ...prev].slice(0, max));
+      }),
+    );
+    return () => { unsubs.forEach((u) => u()); setConnected(false); };
   }, [minUsd, max]);
 
   return { trades, connected };
 }
 
-/** Latest prices derived from the stream — useful for header tickers. */
+/** Latest prices derived from ticker stream (shared WS). */
 export function useBinancePriceStream() {
   const [prices, setPrices] = useState<Record<string, { price: number; change24h: number }>>({});
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const ws = new WebSocket(
-      "wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/ethusdt@ticker/solusdt@ticker/ltcusdt@ticker",
-    );
-    ws.onmessage = (ev) => {
-      try {
-        const { data } = JSON.parse(ev.data);
-        const sym = ASSET_MAP[data.s];
-        if (!sym) return;
+    const targets = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "LTCUSDT"];
+    const unsubs = targets.map((sym) =>
+      subscribeBinanceStream("spot", `${sym.toLowerCase()}@ticker`, (d) => {
+        const data = d as { s: string; c: string; P: string };
+        const asset = ASSET_MAP[data.s];
+        if (!asset) return;
         setPrices((prev) => ({
           ...prev,
-          [sym]: { price: parseFloat(data.c), change24h: parseFloat(data.P) },
+          [asset]: { price: parseFloat(data.c), change24h: parseFloat(data.P) },
         }));
-      } catch { /* ignore */ }
-    };
-    return () => ws.close();
+      }),
+    );
+    return () => unsubs.forEach((u) => u());
   }, []);
   return prices;
 }

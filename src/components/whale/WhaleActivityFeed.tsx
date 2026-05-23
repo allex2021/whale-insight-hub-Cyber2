@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDownRight, ArrowUpRight, Radio } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Radio, Volume2, VolumeX } from "lucide-react";
 import { Panel } from "./Panel";
 import { EmptyState } from "./StateView";
 import { useBinanceWhaleStream, type WhaleTrade, type WhaleAsset } from "@/hooks/useBinanceWhaleStream";
 import { useSymbolFilter } from "@/hooks/useSymbolFilter";
+import { useWhaleAlertSound } from "@/hooks/useWhaleAlertSound";
 import { cn } from "@/lib/utils";
 
 const SYMBOL_MAP: Record<string, WhaleAsset> = {
@@ -63,8 +64,13 @@ function ago(ts: number) {
 
 export function WhaleActivityFeed() {
   const [tier, setTier] = useState<number>(100_000);
+  const [mounted, setMounted] = useState(false);
   const { trades: liveTrades, connected } = useBinanceWhaleStream(tier, 80);
   const { selected } = useSymbolFilter();
+  const { playPump, playDump, muted, toggleMuted } = useWhaleAlertSound();
+  const seenIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => { setMounted(true); }, []);
 
   // Bootstrap with recent REST trades so the feed is never empty on mount.
   const { data: seedTrades } = useQuery({
@@ -81,6 +87,22 @@ export function WhaleActivityFeed() {
     return Array.from(map.values()).sort((a, b) => b.tradeTime - a.tradeTime).slice(0, 120);
   }, [liveTrades, seedTrades]);
 
+  // Play buy/sell sound on new live trades only (skip backfill on first mount)
+  useEffect(() => {
+    if (!liveTrades.length) return;
+    const isFirst = seenIds.current.size === 0;
+    for (const t of liveTrades) {
+      if (seenIds.current.has(t.id)) continue;
+      seenIds.current.add(t.id);
+      if (isFirst) continue;
+      if (t.side === "BUY") playPump("pump"); else playDump("dump");
+    }
+    if (seenIds.current.size > 500) {
+      seenIds.current = new Set(liveTrades.map((t) => t.id));
+    }
+  }, [liveTrades, playPump, playDump]);
+
+
   const filtered = useMemo(
     () => merged.filter((t) => selected.includes(t.asset as never)),
     [merged, selected],
@@ -89,7 +111,7 @@ export function WhaleActivityFeed() {
   return (
     <Panel
       title="Live Whale Activity"
-      subtitle={`${filtered.length} trades · persisted across refresh`}
+      subtitle={`${mounted ? filtered.length : 0} trades · persisted across refresh`}
       accent="purple"
       action={
         <div className="flex items-center gap-2">
@@ -97,6 +119,13 @@ export function WhaleActivityFeed() {
             <Radio className={cn("h-3 w-3", connected ? "text-bull animate-pulse" : "text-bear")} />
             <span className={connected ? "text-bull" : "text-bear"}>{connected ? "Live" : "Off"}</span>
           </span>
+          <button
+            onClick={toggleMuted}
+            title={muted ? "Unmute buy/sell sounds" : "Mute buy/sell sounds"}
+            className="rounded p-1 text-muted-foreground hover:text-foreground"
+          >
+            {muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5 text-[var(--neon-purple)]" />}
+          </button>
           {TIERS.map((t) => (
             <button
               key={t.v}

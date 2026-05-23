@@ -1,68 +1,92 @@
-# Add 8 new features to Whale Intelligence Pro
+# Whale Intelligence Pro — Audit
 
-Sob feature **frontend-only** (no backend changes), **free public APIs** (Binance + CoinGecko), tomar existing design system + Panel component use korbe.
+## ✅ Ja ache (full implemented)
 
-## Notun panels (live data)
+**Panels (24 ta):**
+- Whale Tracker (Hyperliquid + Smart Money Score) ✅
+- Liquidation Heatmap ✅
+- Options Flow (Put/Call) ✅
+- News & AI Analysis (CryptoPanic + Gemini) ✅
+- Smart Money Scoreboard ✅
+- Cross-Exchange Signals ✅
+- Inter-Market Correlation (DXY/SPX/Gold vs BTC) ✅
+- Funding Rate Monitor ✅
+- AI Trading Signals ✅
+- Whale vs Retail Divergence ✅
+- Alert Center (configurable thresholds) ✅
+- Long/Short Ratio ✅
+- Support/Resistance ✅
+- Order Book Walls ✅
+- CVD Panel ✅
+- Open Interest Tracker ✅
+- Liquidation Feed (live) ✅
+- Macro Bar ✅
+- Stablecoin Supply ✅
+- Symbol Filter + Sound Settings ✅
 
-1. **Order Book Walls** — Binance `@depth20@100ms` WebSocket. Top 5 bid + ask walls (USD value), highlight kore yeta current price er kacha. Boro wall = real-time S/R proof.
+**Data sources connected:**
+- Binance (REST + WebSocket) ✅
+- Bybit (`api.bybit.com/v5`) ✅
+- Hyperliquid ✅
+- CoinGecko ✅
+- Alternative.me (Fear & Greed) ✅
+- CryptoPanic (News) ✅
+- Lovable AI Gateway / Gemini (AI analysis) ✅ — *tomar list e "OpenRouter" likha, kintu amra Gemini direct use korchi, eta superior — same kaaj, faster, no extra API key*
 
-2. **CVD (Cumulative Volume Delta)** — Existing `useBinanceWhaleStream` extend kore, ekta lightweight aggTrade-based CVD calculator. BTC/ETH/SOL er jonno running delta (buy vol − sell vol) ekta sparkline. Price up + CVD down = bearish divergence chip.
+## ❌ Ja nei / weak / improve kora dorkar
 
-3. **Open Interest Tracker** — Binance `/fapi/v1/openInterest` + `/futures/data/openInterestHist` (1h, last 24 candles). 9 ta symbol er jonno OI change % + mini sparkline + interpretation chip (OI↑+Price↑ = "TREND", OI↑+Price↓ = "SHORT BUILD", etc.). 60s refresh.
+### Data sources missing
+1. **OKX** — 3rd biggest exchange, currently absent. Cross-exchange signal aro strong hobe.
+2. **Deribit** — Options flow ekhon Bybit-based; Deribit is the actual options leader (>80% BTC options volume). Real institutional flow ekhane.
+3. **Coinglass / Coinalyze** — Aggregated liquidation + funding cross-exchange (paid tier ache, free tier limited).
+4. **Glassnode / CryptoQuant free tier** — On-chain metrics: exchange netflow, miner reserves, SOPR, MVRV. Currently zero on-chain data.
+5. **Whale Alert API** — Large on-chain transfers (BTC/ETH/USDT >$1M). Free tier ache.
+6. **Etherscan / Arkham** — Specific wallet tracking, ENS resolution.
+7. **DefiLlama** — TVL, DEX volumes, stablecoin breakdown by chain.
+8. **Velo Data / Laevitas** — Pro options analytics (Greeks, skew, term structure).
 
-4. **Liquidation Feed (live)** — Binance `!forceOrder@arr` WebSocket. Real-time liquidation ticker, scrolling list with side/asset/USD size. ≥$100k = highlight, ≥$1M = play `playDump`/`playPump` sound.
+### Feature gaps
+1. **On-chain layer** — Pure derivatives focused ekhon. Add: Exchange Inflow/Outflow, Miner reserves, Stablecoin chain distribution.
+2. **Spot vs Perp basis** — Funding er sathe spot-perp premium dekhale arbitrage signal.
+3. **OI-weighted Funding** — Single funding rate misleading; multi-exchange OI-weighted average dorkar.
+4. **Liquidation cascade simulator** — Ekhon heatmap show kore, kintu "if BTC dumps 3%, $XB liquidated" type forward simulation nei.
+5. **Whale wallet watchlist** — User-saved Hyperliquid traders. Notification when they open/close.
+6. **Trade journal / position tracker** — Alert click kore entry note rakha.
+7. **Custom alert builder** — Ekhon preset threshold; user-defined ("BTC funding > 0.08%", "ETH OI > $10B").
+8. **Telegram / Discord webhook** — Mobile push notification.
+9. **Multi-timeframe S/R** — 15m / 1h / 4h / 1d toggle.
+10. **Volume Profile / VWAP bands** — Intraday levels.
+11. **Order Flow imbalance** — Aggregated trade imbalance over rolling window.
+12. **Backtester** — Signal historical accuracy check.
+13. **PWA / mobile install** — Standalone app from home screen.
+14. **Theme toggle** — Light mode option.
+15. **Auth gated favorites / saved configs** — Supabase already ache, but user preferences server-side save hocche na.
 
-5. **Macro Bar** — CoinGecko `/global` (free). BTC dominance, Total mcap, Total3 (alts ex-BTC/ETH), 24h change. Header-style strip dashboard er top e.
+### Technical / performance gaps
+1. **Shared WebSocket multiplex** — Ekhon ~10 alada Binance WS connection. `wss://stream.binance.com:9443/stream?streams=...` use korle 1 connection enough.
+2. **Tab visibility pause** — Background tab e bandwidth/battery drain.
+3. **Service worker / offline cache** — First load er pore static asset cache.
+4. **Error boundary per panel** — Ekhon 1 panel crash hole pura page jhamela kore na, but explicit boundary nai.
 
-6. **Stablecoin Supply** — CoinGecko `/coins/markets?ids=tether,usd-coin,dai`. Total stablecoin mcap + 24h delta. Positive delta = liquidity entering crypto.
+## 🎯 Priority recommendation (impact-wise sort)
 
-## UX features
+**Tier 1 — Real edge:**
+1. Deribit options integration (institutional flow proper)
+2. OKX add to cross-exchange (3-exchange convergence stronger)
+3. On-chain layer (Whale Alert + DefiLlama) — totally missing dimension
+4. Shared WebSocket multiplex (load speed massive win)
 
-7. **Symbol Favorites Filter** — Header e ekta multi-select chip bar (BTC/ETH/SOL/LTC/BNB/XRP/ADA/DOGE/AVAX). Selection localStorage e save. WhaleTracker, LongShortRatio, OI Tracker — sob ei filter respect korbe. Default: sob selected.
+**Tier 2 — UX killer:**
+5. Custom alert builder + Telegram webhook
+6. Whale wallet watchlist (Hyperliquid traders save)
+7. Multi-timeframe S/R
 
-8. **Sound Settings Panel** — Settings page (`/_authenticated/settings`) e notun section. Per-alert-type toggle + volume slider:
-   - Whale BUY beep
-   - Whale SELL beep
-   - Urgent news triple-beep
-   - Liquidation alert (notun)
-   
-   localStorage e save, `useWhaleAlertSound` hook gulo read korbe.
+**Tier 3 — Nice to have:**
+8. PWA install
+9. Theme toggle
+10. Backtester
+11. Trade journal
 
-## Files
+---
 
-**New:**
-- `src/components/whale/OrderBookWalls.tsx`
-- `src/components/whale/CVDPanel.tsx`
-- `src/components/whale/OpenInterestTracker.tsx`
-- `src/components/whale/LiquidationFeed.tsx`
-- `src/components/whale/MacroBar.tsx`
-- `src/components/whale/StablecoinSupply.tsx`
-- `src/components/whale/SymbolFilter.tsx`
-- `src/hooks/useBinanceDepth.ts`
-- `src/hooks/useBinanceLiquidations.ts`
-- `src/hooks/useSymbolFilter.ts` (Zustand-lite localStorage hook)
-- `src/hooks/useSoundSettings.ts`
-
-**Edit:**
-- `src/routes/_authenticated/index.tsx` — wire new panels in this order:
-  ```
-  MacroBar → HeaderBar → SymbolFilter → WhaleTracker → LongShortRatio
-  → OrderBookWalls → CVDPanel → OpenInterestTracker → SupportResistance
-  → LiquidationFeed | StablecoinSupply (grid-2)
-  → [existing rest]
-  ```
-- `src/hooks/useWhaleAlertSound.ts` — sound settings respect korbe (volume + enabled flags)
-- `src/components/whale/WhaleTracker.tsx`, `LongShortRatio.tsx` — symbol filter integrate
-- `src/routes/_authenticated/settings.tsx` — sound settings UI add
-
-## Technical notes
-
-- Sob Binance API public (no auth, no rate-limit issues at our cadence).
-- CoinGecko free tier: 30 calls/min, amra 60s refresh use korchi, fine.
-- WebSocket gulo `useEffect` cleanup + exponential backoff reconnect (existing pattern).
-- Design tokens (`--neon-*`, `bull`/`bear`, `Panel`/`Chip`) consistent rakhbo.
-- Mobile (750px) e sob panel responsive grid-collapse korbe.
-
-## Skipped (require backend/paid APIs)
-
-ETF flows, Telegram webhooks, Backtester, Wallet watchlist, Light theme — alada turn e bolle add korbo.
+Bolo konta age korbo — ami suggest korbo **Tier 1 er #4 (WebSocket multiplex) + #3 (on-chain layer Whale Alert + DefiLlama)** age korte, karon onek high impact r free APIs.

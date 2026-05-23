@@ -144,8 +144,8 @@ export function WhaleActivityFeed() {
       action={
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1 text-[10px] font-bold uppercase">
-            <Radio className={cn("h-3 w-3", connected ? "text-bull animate-pulse" : "text-bear")} />
-            <span className={connected ? "text-bull" : "text-bear"}>{connected ? "Live" : "Off"}</span>
+            <Radio className={cn("h-3 w-3", anyConnected ? "text-bull animate-pulse" : "text-bear")} />
+            <span className={anyConnected ? "text-bull" : "text-bear"}>{anyConnected ? "Live" : "Off"}</span>
           </span>
           <button
             onClick={toggleMuted}

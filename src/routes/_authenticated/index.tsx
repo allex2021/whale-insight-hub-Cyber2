@@ -25,6 +25,8 @@ const WhaleDivergence = lazy(() => import("@/components/whale/WhaleDivergence").
 const InterMarketCorrelation = lazy(() => import("@/components/whale/InterMarketCorrelation").then(m => ({ default: m.InterMarketCorrelation })));
 const AITradingSignals = lazy(() => import("@/components/whale/AITradingSignals").then(m => ({ default: m.AITradingSignals })));
 const AlertCenter = lazy(() => import("@/components/whale/AlertCenter").then(m => ({ default: m.AlertCenter })));
+const DeribitOptionsPanel = lazy(() => import("@/components/whale/DeribitOptionsPanel").then(m => ({ default: m.DeribitOptionsPanel })));
+const CustomAlertBuilder = lazy(() => import("@/components/whale/CustomAlertBuilder").then(m => ({ default: m.CustomAlertBuilder })));
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({

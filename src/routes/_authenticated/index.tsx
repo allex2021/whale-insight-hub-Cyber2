@@ -1,25 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { lazy } from "react";
 import { HeaderBar } from "@/components/whale/HeaderBar";
-import { WhaleTracker } from "@/components/whale/WhaleTracker";
-import { LiquidationHeatmap } from "@/components/whale/LiquidationHeatmap";
-import { FundingRateMonitor } from "@/components/whale/FundingRateMonitor";
-import { OptionsFlow } from "@/components/whale/OptionsFlow";
-import { CrossExchangeSignal } from "@/components/whale/CrossExchangeSignal";
-import { NewsAI } from "@/components/whale/NewsAI";
-import { SmartMoneyBoard } from "@/components/whale/SmartMoneyBoard";
-import { WhaleDivergence } from "@/components/whale/WhaleDivergence";
-import { InterMarketCorrelation } from "@/components/whale/InterMarketCorrelation";
-import { AITradingSignals } from "@/components/whale/AITradingSignals";
-import { AlertCenter } from "@/components/whale/AlertCenter";
-import { LongShortRatio } from "@/components/whale/LongShortRatio";
-import { SupportResistance } from "@/components/whale/SupportResistance";
 import { MacroBar } from "@/components/whale/MacroBar";
 import { SymbolFilter } from "@/components/whale/SymbolFilter";
-import { OrderBookWalls } from "@/components/whale/OrderBookWalls";
-import { CVDPanel } from "@/components/whale/CVDPanel";
-import { OpenInterestTracker } from "@/components/whale/OpenInterestTracker";
-import { LiquidationFeed } from "@/components/whale/LiquidationFeed";
-import { StablecoinSupply } from "@/components/whale/StablecoinSupply";
+import { WhaleTracker } from "@/components/whale/WhaleTracker";
+import { LongShortRatio } from "@/components/whale/LongShortRatio";
+import { LazyMount } from "@/components/whale/LazyMount";
+
+// Below-the-fold panels: code-split + mount on scroll
+const OrderBookWalls = lazy(() => import("@/components/whale/OrderBookWalls").then(m => ({ default: m.OrderBookWalls })));
+const CVDPanel = lazy(() => import("@/components/whale/CVDPanel").then(m => ({ default: m.CVDPanel })));
+const OpenInterestTracker = lazy(() => import("@/components/whale/OpenInterestTracker").then(m => ({ default: m.OpenInterestTracker })));
+const SupportResistance = lazy(() => import("@/components/whale/SupportResistance").then(m => ({ default: m.SupportResistance })));
+const LiquidationFeed = lazy(() => import("@/components/whale/LiquidationFeed").then(m => ({ default: m.LiquidationFeed })));
+const StablecoinSupply = lazy(() => import("@/components/whale/StablecoinSupply").then(m => ({ default: m.StablecoinSupply })));
+const LiquidationHeatmap = lazy(() => import("@/components/whale/LiquidationHeatmap").then(m => ({ default: m.LiquidationHeatmap })));
+const FundingRateMonitor = lazy(() => import("@/components/whale/FundingRateMonitor").then(m => ({ default: m.FundingRateMonitor })));
+const OptionsFlow = lazy(() => import("@/components/whale/OptionsFlow").then(m => ({ default: m.OptionsFlow })));
+const CrossExchangeSignal = lazy(() => import("@/components/whale/CrossExchangeSignal").then(m => ({ default: m.CrossExchangeSignal })));
+const NewsAI = lazy(() => import("@/components/whale/NewsAI").then(m => ({ default: m.NewsAI })));
+const SmartMoneyBoard = lazy(() => import("@/components/whale/SmartMoneyBoard").then(m => ({ default: m.SmartMoneyBoard })));
+const WhaleDivergence = lazy(() => import("@/components/whale/WhaleDivergence").then(m => ({ default: m.WhaleDivergence })));
+const InterMarketCorrelation = lazy(() => import("@/components/whale/InterMarketCorrelation").then(m => ({ default: m.InterMarketCorrelation })));
+const AITradingSignals = lazy(() => import("@/components/whale/AITradingSignals").then(m => ({ default: m.AITradingSignals })));
+const AlertCenter = lazy(() => import("@/components/whale/AlertCenter").then(m => ({ default: m.AlertCenter })));
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -32,6 +36,9 @@ export const Route = createFileRoute("/_authenticated/")({
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
+      { rel: "preconnect", href: "https://stream.binance.com" },
+      { rel: "preconnect", href: "https://fapi.binance.com" },
+      { rel: "preconnect", href: "https://api.coingecko.com" },
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;600;700&display=swap",
@@ -46,48 +53,43 @@ function Dashboard() {
     <div className="min-h-screen text-foreground">
       <HeaderBar />
       <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-6 lg:px-8">
+        {/* Above the fold — eager */}
         <MacroBar />
         <SymbolFilter />
-
         <WhaleTracker />
-
         <LongShortRatio />
 
-        <OrderBookWalls />
-
-        <CVDPanel />
-
-        <OpenInterestTracker />
-
-        <SupportResistance />
+        {/* Below the fold — mount on scroll */}
+        <LazyMount minHeight={320}><OrderBookWalls /></LazyMount>
+        <LazyMount minHeight={280}><CVDPanel /></LazyMount>
+        <LazyMount minHeight={320}><OpenInterestTracker /></LazyMount>
+        <LazyMount minHeight={280}><SupportResistance /></LazyMount>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <LiquidationFeed />
-          <StablecoinSupply />
+          <LazyMount minHeight={320}><LiquidationFeed /></LazyMount>
+          <LazyMount minHeight={320}><StablecoinSupply /></LazyMount>
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <LiquidationHeatmap />
-          <FundingRateMonitor />
+          <LazyMount minHeight={360}><LiquidationHeatmap /></LazyMount>
+          <LazyMount minHeight={360}><FundingRateMonitor /></LazyMount>
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <OptionsFlow />
-          <CrossExchangeSignal />
+          <LazyMount minHeight={360}><OptionsFlow /></LazyMount>
+          <LazyMount minHeight={360}><CrossExchangeSignal /></LazyMount>
         </div>
 
-        <NewsAI />
+        <LazyMount minHeight={400}><NewsAI /></LazyMount>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <SmartMoneyBoard />
-          <WhaleDivergence />
+          <LazyMount minHeight={360}><SmartMoneyBoard /></LazyMount>
+          <LazyMount minHeight={360}><WhaleDivergence /></LazyMount>
         </div>
 
-        <InterMarketCorrelation />
-
-        <AITradingSignals />
-
-        <AlertCenter />
+        <LazyMount minHeight={320}><InterMarketCorrelation /></LazyMount>
+        <LazyMount minHeight={400}><AITradingSignals /></LazyMount>
+        <LazyMount minHeight={320}><AlertCenter /></LazyMount>
 
         <footer className="border-t border-border pt-6 pb-10 text-center text-xs text-muted-foreground">
           🐋 <span className="font-bold text-foreground">Whale Intelligence Pro</span> · Powered by <span className="text-[var(--neon-purple)] font-semibold">Allex@Cyber2</span>

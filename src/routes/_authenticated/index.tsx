@@ -12,6 +12,7 @@ import { InterMarketCorrelation } from "@/components/whale/InterMarketCorrelatio
 import { AITradingSignals } from "@/components/whale/AITradingSignals";
 import { AlertCenter } from "@/components/whale/AlertCenter";
 import { LongShortRatio } from "@/components/whale/LongShortRatio";
+import { SupportResistance } from "@/components/whale/SupportResistance";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({

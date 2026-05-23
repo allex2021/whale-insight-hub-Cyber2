@@ -121,7 +121,7 @@ function Dashboard() {
             <LazyMount minHeight={280}><SupportResistance /></LazyMount>
             <LazyMount minHeight={320}><StablecoinSupply /></LazyMount>
             <LazyMount minHeight={360}><CustomAlertBuilder /></LazyMount>
-            <LazyMount minHeight={320}><AlertCenter /></LazyMount>
+            
           </TabsContent>
         </Tabs>
 

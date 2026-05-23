@@ -207,6 +207,46 @@ export function WhaleActivityFeed() {
             </div>
           </div>
 
+          {/* Exchange filter + per-exchange connection status */}
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            <button
+              onClick={() => setExchangeFilter("ALL")}
+              className={cn(
+                "rounded-full px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase transition-colors border",
+                exchangeFilter === "ALL"
+                  ? "border-[var(--neon-purple)]/60 bg-[var(--neon-purple)]/20 text-[var(--neon-purple)]"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              All ({merged.length})
+            </button>
+            {EXCHANGES.map((ex) => {
+              const meta = EXCHANGE_META[ex];
+              const active = exchangeFilter === ex;
+              const count = merged.filter((t) => t.exchange === ex).length;
+              const live = status[ex];
+              return (
+                <button
+                  key={ex}
+                  onClick={() => setExchangeFilter(ex)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase transition-colors border",
+                    active ? "bg-card text-foreground" : "border-border text-muted-foreground hover:text-foreground",
+                  )}
+                  style={active ? { borderColor: meta.color, boxShadow: `0 0 8px ${meta.color}33` } : undefined}
+                  title={`${meta.label} · ${live ? "connected" : "reconnecting"}`}
+                >
+                  <span
+                    className={cn("h-1.5 w-1.5 rounded-full", live ? "animate-pulse" : "opacity-40")}
+                    style={{ background: live ? meta.color : "#ef4444" }}
+                  />
+                  <span style={active ? { color: meta.color } : undefined}>{meta.label}</span>
+                  <span className="opacity-70">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+
           {filtered.length === 0 ? (
             <EmptyState label="Waiting for whale trades… they will appear here in seconds." />
           ) : (
@@ -215,6 +255,7 @@ export function WhaleActivityFeed() {
             <thead className="sticky top-0 bg-card/95 backdrop-blur">
               <tr className="border-b border-border text-[10px] uppercase tracking-wide text-muted-foreground">
                 <th className="px-3 py-2 text-left font-medium">Time</th>
+                <th className="px-2 py-2 text-left font-medium">Exch</th>
                 <th className="px-3 py-2 text-left font-medium">Asset</th>
                 <th className="px-3 py-2 text-left font-medium">Side</th>
                 <th className="px-3 py-2 text-right font-medium">Price</th>
@@ -222,9 +263,20 @@ export function WhaleActivityFeed() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((t) => (
+              {filtered.map((t) => {
+                const meta = EXCHANGE_META[t.exchange];
+                return (
                 <tr key={t.id} className="border-b border-border/40 hover:bg-card-hover">
                   <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{ago(t.tradeTime)} ago</td>
+                  <td className="px-2 py-2">
+                    <span
+                      className="inline-block rounded px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase"
+                      style={{ background: `${meta.color}22`, color: meta.color, border: `1px solid ${meta.color}55` }}
+                      title={meta.label}
+                    >
+                      {meta.label.slice(0, 3)}
+                    </span>
+                  </td>
                   <td className="px-3 py-2 font-mono font-bold">{t.asset}</td>
                   <td className="px-3 py-2">
                     <span className={cn("inline-flex items-center gap-1 font-mono text-[11px] font-bold", t.side === "BUY" ? "text-bull" : "text-bear")}>
@@ -239,7 +291,8 @@ export function WhaleActivityFeed() {
                     {fmtUsd(t.sizeUsd)}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

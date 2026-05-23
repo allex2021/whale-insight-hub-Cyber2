@@ -1,10 +1,45 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowDownRight, ArrowUpRight, Radio } from "lucide-react";
 import { Panel } from "./Panel";
 import { EmptyState } from "./StateView";
-import { useBinanceWhaleStream } from "@/hooks/useBinanceWhaleStream";
+import { useBinanceWhaleStream, type WhaleTrade, type WhaleAsset } from "@/hooks/useBinanceWhaleStream";
 import { useSymbolFilter } from "@/hooks/useSymbolFilter";
 import { cn } from "@/lib/utils";
+
+const SYMBOL_MAP: Record<string, WhaleAsset> = {
+  BTCUSDT: "BTC", ETHUSDT: "ETH", SOLUSDT: "SOL", LTCUSDT: "LTC",
+  BNBUSDT: "BNB", XRPUSDT: "XRP", ADAUSDT: "ADA", DOGEUSDT: "DOGE", AVAXUSDT: "AVAX",
+};
+
+async function fetchRecentWhales(minUsd: number): Promise<WhaleTrade[]> {
+  const symbols = Object.keys(SYMBOL_MAP);
+  const results = await Promise.allSettled(
+    symbols.map(async (sym) => {
+      const r = await fetch(`https://api.binance.com/api/v3/aggTrades?symbol=${sym}&limit=500`);
+      if (!r.ok) return [] as WhaleTrade[];
+      const arr = (await r.json()) as Array<{ a: number; p: string; q: string; m: boolean; T: number }>;
+      return arr
+        .map((t): WhaleTrade => {
+          const price = parseFloat(t.p);
+          const quantity = parseFloat(t.q);
+          return {
+            id: `${sym}-${t.a}`,
+            asset: SYMBOL_MAP[sym],
+            side: t.m ? "SELL" : "BUY",
+            price, quantity, sizeUsd: price * quantity,
+            tradeTime: t.T,
+            exchange: "binance",
+          };
+        })
+        .filter((t) => t.sizeUsd >= minUsd);
+    }),
+  );
+  return results
+    .flatMap((r) => (r.status === "fulfilled" ? r.value : []))
+    .sort((a, b) => b.tradeTime - a.tradeTime);
+}
+
 
 const TIERS = [
   { v: 100_000, label: "$100K+" },

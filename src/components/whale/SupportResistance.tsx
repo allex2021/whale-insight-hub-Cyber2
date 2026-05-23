@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Panel, Chip } from "./Panel";
 import { LoadingState, ErrorState } from "./StateView";
@@ -78,11 +79,12 @@ function computeLevels(klines: number[][], price: number) {
   return { supports, resistances, pivot };
 }
 
-async function fetchSR(asset: Asset): Promise<SRData> {
+type Timeframe = "15m" | "1h" | "4h" | "1d";
+
+async function fetchSR(asset: Asset, tf: Timeframe): Promise<SRData> {
   const sym = `${asset}USDT`;
-  // 4-hour candles, last 120 bars (~20 days) gives clean S/R
   const [klRes, tRes] = await Promise.all([
-    fetch(`https://api.binance.com/api/v3/klines?symbol=${sym}&interval=4h&limit=120`),
+    fetch(`https://api.binance.com/api/v3/klines?symbol=${sym}&interval=${tf}&limit=120`),
     fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${sym}`),
   ]);
   if (!klRes.ok || !tRes.ok) throw new Error(`Binance ${sym} failed`);
@@ -150,11 +152,12 @@ function AssetCard({ d }: { d: SRData }) {
 }
 
 export function SupportResistance() {
+  const [tf, setTf] = useState<Timeframe>("4h");
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["support-resistance"],
+    queryKey: ["support-resistance", tf],
     queryFn: async () => {
       const results = await Promise.all(
-        ASSETS.map((a) => fetchSR(a).catch(() => null)),
+        ASSETS.map((a) => fetchSR(a, tf).catch(() => null)),
       );
       return results.filter((r): r is SRData => r !== null);
     },
@@ -165,8 +168,26 @@ export function SupportResistance() {
   return (
     <Panel
       title="Support & Resistance"
-      subtitle="Pivot-based S/R levels · 4h candles · auto-clustered swing highs/lows"
+      subtitle={`Pivot-based S/R · ${tf} candles · auto-clustered swing highs/lows`}
       accent="purple"
+      action={
+        <div className="flex gap-1">
+          {(["15m", "1h", "4h", "1d"] as Timeframe[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTf(t)}
+              className={cn(
+                "rounded px-2 py-0.5 font-mono text-[10px] transition-colors",
+                tf === t
+                  ? "bg-[var(--neon-purple)]/20 text-[var(--neon-purple)]"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      }
     >
       {isLoading && !data && <LoadingState label="Computing S/R levels…" />}
       {error && !data && <ErrorState error={String(error)} onRetry={() => refetch()} />}

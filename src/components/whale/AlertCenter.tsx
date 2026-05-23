@@ -27,7 +27,7 @@ const iconFor = (t: string) => ({
 const fmtUsd = (n: number) =>
   n >= 1e6 ? `$${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `$${(n / 1e3).toFixed(1)}K` : `$${n.toFixed(0)}`;
 
-const WHALE_THRESHOLD = 500_000;
+const WHALE_THRESHOLD = 250_000;
 
 export function AlertCenter() {
   const [dbAlerts, setDbAlerts] = useState<AlertRow[] | null>(null);
@@ -37,7 +37,7 @@ export function AlertCenter() {
   const [tick, setTick] = useState(0);
 
   const { trades } = useBinanceWhaleStream(WHALE_THRESHOLD, 50);
-  const { playBeep, muted, toggleMuted } = useWhaleAlertSound();
+  const { playPump, playDump, muted, toggleMuted } = useWhaleAlertSound();
   const seenTradeIds = useRef<Set<string>>(new Set());
 
   // Fetch DB alerts + realtime subscription
@@ -68,11 +68,12 @@ export function AlertCenter() {
     return () => { cancelled = true; supabase.removeChannel(channel); };
   }, [tick]);
 
-  // Bridge Binance stream → live whale alerts + beep on LONG
+  // Bridge Binance stream → live whale alerts + beep on BUY/SELL
   useEffect(() => {
     if (trades.length === 0) return;
     const fresh: AlertRow[] = [];
-    let beepOnce = false;
+    let pumpOnce = false;
+    let dumpOnce = false;
     for (const t of trades) {
       if (seenTradeIds.current.has(t.id)) continue;
       seenTradeIds.current.add(t.id);
@@ -86,16 +87,17 @@ export function AlertCenter() {
         asset: t.asset,
         side,
       });
-      if (side === "LONG") beepOnce = true;
+      if (side === "LONG") pumpOnce = true;
+      else dumpOnce = true;
     }
     if (fresh.length === 0) return;
-    // Cap memory — keep the set bounded
     if (seenTradeIds.current.size > 500) {
       seenTradeIds.current = new Set(Array.from(seenTradeIds.current).slice(-300));
     }
     setLiveAlerts((prev) => [...fresh, ...prev].slice(0, 50));
-    if (beepOnce) playBeep();
-  }, [trades, playBeep]);
+    if (pumpOnce) playPump();
+    if (dumpOnce) setTimeout(() => playDump(), pumpOnce ? 220 : 0);
+  }, [trades, playPump, playDump]);
 
   const merged = useMemo(() => {
     const all = [...liveAlerts, ...(dbAlerts ?? [])];

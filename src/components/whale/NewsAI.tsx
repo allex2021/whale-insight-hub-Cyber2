@@ -1,16 +1,39 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Panel, Chip } from "./Panel";
 import { timeAgo } from "@/lib/whale/format";
 import { useAsync } from "@/lib/whale/useAsync";
 import { fetchNewsServer } from "@/lib/whale/market.functions";
 import { ErrorState, LoadingState } from "./StateView";
+import { useWhaleAlertSound } from "@/hooks/useWhaleAlertSound";
 
 export function NewsAI() {
   const fn = useServerFn(fetchNewsServer);
   const fetcher = useMemo(() => (_s: AbortSignal) => fn(), [fn]);
   const { data: items, error, loading, retry } = useAsync(fetcher, [], { refreshMs: 120_000 });
   const breaking = items?.find((i) => (i.ai?.score ?? 0) >= 9);
+  const { playUrgent } = useWhaleAlertSound();
+  const seenUrgent = useRef<Set<string>>(new Set());
+  const firstRun = useRef(true);
+
+  // Beep when a new high-impact news item (score >= 8) arrives.
+  useEffect(() => {
+    if (!items) return;
+    const urgent = items.filter((i) => (i.ai?.score ?? 0) >= 8);
+    if (firstRun.current) {
+      urgent.forEach((i) => seenUrgent.current.add(String(i.id)));
+      firstRun.current = false;
+      return;
+    }
+    let fired = false;
+    for (const i of urgent) {
+      const id = String(i.id);
+      if (!seenUrgent.current.has(id)) {
+        seenUrgent.current.add(id);
+        if (!fired) { playUrgent(); fired = true; }
+      }
+    }
+  }, [items, playUrgent]);
 
   return (
     <Panel title="News & AI Analysis" subtitle="Live CryptoPanic feed · community-scored" accent="purple">

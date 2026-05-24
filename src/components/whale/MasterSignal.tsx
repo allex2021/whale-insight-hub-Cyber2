@@ -240,6 +240,20 @@ export function MasterSignal() {
       accent="purple"
       action={
         <>
+          <div className="flex gap-0.5 rounded-md border border-border bg-secondary/40 p-0.5">
+            {(["SPOT", "FUTURES"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={cn(
+                  "rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors",
+                  mode === m ? "bg-[var(--neon-blue)]/30 text-foreground" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
           <div className="flex gap-1 rounded-md border border-border bg-secondary/40 p-0.5">
             {ASSETS.map((a) => {
               const s = states[a].signal;
@@ -261,6 +275,7 @@ export function MasterSignal() {
               );
             })}
           </div>
+
           <button
             onClick={() => setTick((t) => t + 1)}
             className="rounded-md border border-border bg-secondary/40 p-1 text-muted-foreground hover:text-foreground"

@@ -57,11 +57,22 @@ export function AITradingSignals() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Auto-generate one signal per asset for current timeframe if missing
+  // Auto-generate one signal per asset for current timeframe if missing OR stale (>2h)
   useEffect(() => {
     if (!data) return;
-    const have = new Set(data.signals.filter((s) => s.timeframe === timeframe).map((s) => s.asset));
-    const missing = ASSETS.filter((a) => !have.has(a) && latestPrices[a]);
+    const STALE_MS = 2 * 60 * 60_000;
+    const now = Date.now();
+    const freshByAsset = new Map<string, number>();
+    for (const s of data.signals) {
+      if (s.timeframe !== timeframe) continue;
+      const age = now - new Date(s.created_at).getTime();
+      const prev = freshByAsset.get(s.asset) ?? Infinity;
+      if (age < prev) freshByAsset.set(s.asset, age);
+    }
+    const missing = ASSETS.filter((a) => {
+      const age = freshByAsset.get(a);
+      return latestPrices[a] && (age === undefined || age > STALE_MS);
+    });
     if (missing.length > 0 && !mut.isPending) mut.mutate(missing[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, latestPrices, timeframe]);

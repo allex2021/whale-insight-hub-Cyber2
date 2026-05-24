@@ -3,7 +3,7 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const GenerateInput = z.object({
-  asset: z.enum(["BTC", "ETH", "SOL", "LTC"]),
+  asset: z.string().min(2).max(10).regex(/^[A-Z0-9]+$/),
   price: z.number().positive(),
   recentTradesSummary: z.string().max(2000),
   timeframe: z.enum(["15m", "1H", "4H", "1D"]).default("4H"),

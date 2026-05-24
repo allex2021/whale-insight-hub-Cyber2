@@ -13,7 +13,12 @@ export const Route = createFileRoute("/api/public/cron/broadcast-signals")({
   server: { handlers: { POST: handler, GET: handler } },
 });
 
-const ASSETS: Array<"BTC" | "ETH" | "SOL" | "LTC"> = ["BTC", "ETH", "SOL", "LTC"];
+// Top-30 perp universe by liquidity. Cron scans these every hour.
+const ASSETS = [
+  "BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "AVAX", "LINK", "TRX",
+  "DOT", "MATIC", "LTC", "SHIB", "BCH", "NEAR", "UNI", "APT", "ATOM", "ETC",
+  "FIL", "ARB", "OP", "INJ", "SUI", "TIA", "SEI", "RUNE", "AAVE", "PEPE",
+] as const;
 const TIMEFRAME = "4H" as const;
 const COOLDOWN_HOURS = 4;
 

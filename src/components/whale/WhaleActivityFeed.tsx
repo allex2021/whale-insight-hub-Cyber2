@@ -146,7 +146,7 @@ export function WhaleActivityFeed() {
 
   const stats = useMemo(() => {
     let buys = 0, sells = 0, buyUsd = 0, sellUsd = 0;
-    for (const t of filtered) {
+    for (const { trade: t } of filtered) {
       if (t.side === "BUY") { buys++; buyUsd += t.sizeUsd; }
       else { sells++; sellUsd += t.sizeUsd; }
     }

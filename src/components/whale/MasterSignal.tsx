@@ -295,13 +295,16 @@ export function MasterSignal() {
               <div className="text-[9px] uppercase tracking-wider text-muted-foreground">conviction</div>
             </div>
 
-            {/* Trade plan */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat label="Entry" value={`$${sig.entry.toLocaleString("en-US", { maximumFractionDigits: 2 })}`} tone="default" />
-              <Stat label="Target" value={`$${sig.target.toLocaleString("en-US", { maximumFractionDigits: 2 })}`} tone="bull" />
-              <Stat label="Stop" value={`$${sig.stop.toLocaleString("en-US", { maximumFractionDigits: 2 })}`} tone="bear" />
-              <Stat label={`R:R · ${sig.horizon}`} value={`1 : ${sig.rr}`} tone="purple" />
-            </div>
+            {/* Trade plan — Targets card */}
+            <TargetsCard
+              direction={sig.direction}
+              entry={sig.entry}
+              stop={sig.stop}
+              currentPrice={current.inputs.price}
+              horizon={sig.horizon}
+              rr={sig.rr}
+            />
+
 
             {/* AI button */}
             <div className="flex flex-col items-stretch justify-center gap-2">

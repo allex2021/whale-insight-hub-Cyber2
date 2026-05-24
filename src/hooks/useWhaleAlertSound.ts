@@ -118,5 +118,42 @@ export function useWhaleAlertSound() {
 
   const playBeep = playPump;
 
-  return { playBeep, playPump, playDump, playUrgent, muted, toggleMuted };
+  /**
+   * Speak a whale trade. Falls back to beep when voice is disabled,
+   * speech synthesis is unavailable, or trade is below voice-min size.
+   */
+  const speakTrade = useCallback(
+    (side: "BUY" | "SELL", asset: string, usd: number) => {
+      const s = getSoundSettings();
+      const key: SoundKey = side === "BUY" ? "pump" : "dump";
+      const beepFallback = () => (side === "BUY" ? playPump(key) : playDump(key));
+
+      if (muted) return;
+      if (!s.enabled[key]) return;
+      if (!s.voiceEnabled || typeof window === "undefined" || !window.speechSynthesis) {
+        beepFallback();
+        return;
+      }
+      if (usd < s.voiceMinUsd) {
+        beepFallback();
+        return;
+      }
+      try {
+        const verb = side === "BUY" ? "Buying" : "Selling";
+        const amount =
+          usd >= 1_000_000 ? `${(usd / 1_000_000).toFixed(1)} million` : `${Math.round(usd / 1000)}K`;
+        const u = new SpeechSynthesisUtterance(`${verb} ${amount} ${asset}`);
+        u.volume = s.volume;
+        u.rate = 1.1;
+        u.pitch = side === "BUY" ? 1.15 : 0.9;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(u);
+      } catch {
+        beepFallback();
+      }
+    },
+    [muted, playPump, playDump],
+  );
+
+  return { playBeep, playPump, playDump, playUrgent, speakTrade, muted, toggleMuted };
 }

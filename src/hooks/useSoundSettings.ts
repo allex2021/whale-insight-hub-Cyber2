@@ -5,12 +5,16 @@ export type SoundKey = "pump" | "dump" | "urgent" | "liquidation";
 export type SoundSettings = {
   enabled: Record<SoundKey, boolean>;
   volume: number; // 0..1
+  voiceEnabled: boolean; // speak trade events instead of beeping
+  voiceMinUsd: number; // only speak trades >= this USD size
 };
 
-const KEY = "whale-sound-settings-v1";
+const KEY = "whale-sound-settings-v2";
 const DEFAULT: SoundSettings = {
   enabled: { pump: true, dump: true, urgent: true, liquidation: true },
   volume: 0.6,
+  voiceEnabled: false,
+  voiceMinUsd: 500_000,
 };
 
 let current: SoundSettings = DEFAULT;
@@ -27,6 +31,8 @@ function hydrate() {
       current = {
         enabled: { ...DEFAULT.enabled, ...(parsed.enabled ?? {}) },
         volume: typeof parsed.volume === "number" ? Math.max(0, Math.min(1, parsed.volume)) : DEFAULT.volume,
+        voiceEnabled: !!parsed.voiceEnabled,
+        voiceMinUsd: typeof parsed.voiceMinUsd === "number" ? parsed.voiceMinUsd : DEFAULT.voiceMinUsd,
       };
     }
   } catch { /* ignore */ }
@@ -56,7 +62,15 @@ export function useSoundSettings() {
     persist({ ...current, volume: Math.max(0, Math.min(1, v)) });
   }, []);
 
-  return { settings, setEnabled, setVolume };
+  const setVoiceEnabled = useCallback((on: boolean) => {
+    persist({ ...current, voiceEnabled: on });
+  }, []);
+
+  const setVoiceMinUsd = useCallback((v: number) => {
+    persist({ ...current, voiceMinUsd: Math.max(0, v) });
+  }, []);
+
+  return { settings, setEnabled, setVolume, setVoiceEnabled, setVoiceMinUsd };
 }
 
 // Read-only snapshot for non-hook callsites (e.g. inside useWhaleAlertSound).

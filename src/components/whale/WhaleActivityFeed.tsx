@@ -73,7 +73,7 @@ export function WhaleActivityFeed() {
   const [exchangeFilter, setExchangeFilter] = useState<ExchangeId | "ALL">("ALL");
   const { trades: liveTrades, status } = useMultiExchangeWhaleStream(tier, 200);
   const { selected } = useSymbolFilter();
-  const { playPump, playDump, muted, toggleMuted } = useWhaleAlertSound();
+  const { playPump, playDump, speakTrade, muted, toggleMuted } = useWhaleAlertSound();
   const seenIds = useRef<Set<string>>(new Set());
 
   useEffect(() => { setMounted(true); }, []);
@@ -101,12 +101,13 @@ export function WhaleActivityFeed() {
       if (seenIds.current.has(t.id)) continue;
       seenIds.current.add(t.id);
       if (isFirst) continue;
-      if (t.side === "BUY") playPump("pump"); else playDump("dump");
+      // speakTrade auto-falls back to beep when voice is disabled
+      speakTrade(t.side as "BUY" | "SELL", t.asset, t.sizeUsd);
     }
     if (seenIds.current.size > 800) {
       seenIds.current = new Set(liveTrades.map((t) => t.id));
     }
-  }, [liveTrades, playPump, playDump]);
+  }, [liveTrades, speakTrade]);
 
 
   const filtered = useMemo(

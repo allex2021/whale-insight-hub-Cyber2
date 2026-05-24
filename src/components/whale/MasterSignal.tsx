@@ -145,6 +145,7 @@ export function MasterSignal() {
     SOL: { asset: "SOL", loading: true },
   });
   const [selected, setSelected] = useState<Asset>("BTC");
+  const [mode, setMode] = useState<"SPOT" | "FUTURES">("FUTURES");
   const [tick, setTick] = useState(0);
   const [aiVerdict, setAiVerdict] = useState<Record<Asset, AIVerdict | undefined>>({ BTC: undefined, ETH: undefined, SOL: undefined });
   const [aiLoading, setAiLoading] = useState(false);

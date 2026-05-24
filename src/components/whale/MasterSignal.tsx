@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { generateMasterAISignal } from "@/lib/whale/masterSignal.functions";
 import { computeMasterSignal, type MasterInputs, type MasterSignal } from "@/lib/whale/masterSignal";
-import { ArrowDownRight, ArrowUpRight, Brain, Loader2, Minus, RefreshCw, Sparkles, TriangleAlert } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Brain, Check, Loader2, Minus, RefreshCw, Sparkles, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 

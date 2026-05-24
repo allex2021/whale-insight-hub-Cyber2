@@ -476,7 +476,7 @@ function TargetsCard({
   });
 
   const stopHit = isLong ? currentPrice <= stop : isShort ? currentPrice >= stop : false;
-  const lev = suggestLeverage(0);
+  const lev = suggestLeverage(confidence);
 
   return (
     <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2.5">

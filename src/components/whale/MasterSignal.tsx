@@ -320,6 +320,7 @@ export function MasterSignal() {
               currentPrice={current.inputs.price}
               horizon={sig.horizon}
               rr={sig.rr}
+              confidence={sig.confidence}
             />
 
 

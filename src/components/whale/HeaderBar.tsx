@@ -105,6 +105,12 @@ export function HeaderBar() {
             <Activity className="h-3 w-3 text-bull" />
             <span className="text-muted-foreground hidden sm:inline">{updated}</span>
           </div>
+          {isAdmin && (
+            <Link to="/admin" title="Admin Panel"
+              className="rounded-md border border-[var(--neon-purple)]/40 bg-[var(--neon-purple)]/10 p-1.5 text-[var(--neon-purple)] hover:bg-[var(--neon-purple)]/20">
+              <Shield className="h-3.5 w-3.5" />
+            </Link>
+          )}
           <Link to="/settings" title="Settings"
             className="rounded-md border border-border bg-secondary p-1.5 hover:border-border-bright">
             <SettingsIcon className="h-3.5 w-3.5" />

@@ -400,3 +400,96 @@ function Stat({ label, value, tone }: { label: string; value: string; tone: "def
     </div>
   );
 }
+
+function fmtPrice(p: number) {
+  if (p >= 1000) return p.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  if (p >= 1) return p.toFixed(3);
+  return p.toFixed(5);
+}
+
+const TARGET_STEPS = [0.03, 0.06, 0.12, 0.24];
+
+function TargetsCard({
+  direction, entry, stop, currentPrice, horizon, rr,
+}: {
+  direction: "LONG" | "SHORT" | "NEUTRAL";
+  entry: number; stop: number; currentPrice: number; horizon: string; rr: number;
+}) {
+  const isLong = direction === "LONG";
+  const isShort = direction === "SHORT";
+  const sideLabel = isLong ? "BUY" : isShort ? "SELL" : "WATCH";
+  const sideClass = isLong
+    ? "bg-bull/80 text-background"
+    : isShort
+    ? "bg-bear/80 text-background"
+    : "bg-muted text-foreground";
+
+  const targets = TARGET_STEPS.map((pct, i) => {
+    const price = isShort ? entry * (1 - pct) : entry * (1 + pct);
+    const hit = isLong
+      ? currentPrice >= price
+      : isShort
+      ? currentPrice <= price
+      : false;
+    return { idx: i + 1, pct, price, hit };
+  });
+
+  const stopHit = isLong ? currentPrice <= stop : isShort ? currentPrice >= stop : false;
+
+  return (
+    <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2.5">
+      {/* Top: BUY price + Capital + horizon */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className={cn("flex items-center justify-center rounded-md py-2 text-sm font-bold tracking-wide", sideClass)}>
+          {sideLabel}: {fmtPrice(entry)}
+        </div>
+        <div className="flex items-center justify-center rounded-md bg-[var(--neon-orange)]/30 py-2 text-sm font-semibold text-[var(--neon-orange)]">
+          Capital: 2% · {horizon}
+        </div>
+      </div>
+
+      {/* Targets */}
+      <div className="space-y-1.5">
+        {targets.map((t) => (
+          <div
+            key={t.idx}
+            className={cn(
+              "flex items-center justify-between rounded-md border px-3 py-2 text-sm",
+              t.hit
+                ? "border-bull/60 bg-bull/10"
+                : "border-border bg-background/40",
+            )}
+          >
+            <span className="font-semibold text-foreground">
+              Target 0{t.idx}
+            </span>
+            <span className="font-mono tabular-nums text-foreground">
+              {fmtPrice(t.price)}
+            </span>
+            <span className="flex items-center gap-1.5 font-mono font-bold text-bull">
+              {Math.round(t.pct * 100)}%
+              {t.hit && (
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-bull text-background">
+                  <Check className="h-3 w-3" strokeWidth={3} />
+                </span>
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Stoploss */}
+      <div
+        className={cn(
+          "flex items-center justify-center gap-2 rounded-md py-2 text-sm font-bold tracking-wide",
+          stopHit ? "bg-bear text-background" : "bg-bear/80 text-background",
+        )}
+      >
+        STOPLOSS: {fmtPrice(stop)}
+        {stopHit && <span className="text-[10px] uppercase">· hit</span>}
+        <span className="ml-2 text-[10px] font-normal opacity-80">R:R 1 : {rr}</span>
+      </div>
+    </div>
+  );
+}
+

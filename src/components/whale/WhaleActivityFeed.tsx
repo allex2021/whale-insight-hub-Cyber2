@@ -8,7 +8,7 @@ import { useMultiExchangeWhaleStream } from "@/hooks/useMultiExchangeWhaleStream
 import { EXCHANGE_META, type ExchangeId } from "@/lib/whale/multiExchangeStream";
 import { useSymbolFilter } from "@/hooks/useSymbolFilter";
 import { useWhaleAlertSound } from "@/hooks/useWhaleAlertSound";
-import { classifyWhaleIntent, type ClassifyResult } from "@/lib/whale/noiseFilter";
+import { classifyWhaleIntent } from "@/lib/whale/noiseFilter";
 import { cn } from "@/lib/utils";
 
 

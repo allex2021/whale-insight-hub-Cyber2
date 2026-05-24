@@ -425,24 +425,46 @@ function fmtPrice(p: number) {
   return p.toFixed(5);
 }
 
-const TARGET_STEPS = [0.03, 0.06, 0.12, 0.24];
+const TARGET_STEPS_FUTURES = [0.03, 0.06, 0.12, 0.24];
+const TARGET_STEPS_SPOT = [0.05, 0.12, 0.25, 0.50];
+
+function suggestLeverage(confidence: number): number {
+  if (confidence >= 85) return 10;
+  if (confidence >= 70) return 5;
+  if (confidence >= 55) return 3;
+  return 2;
+}
 
 function TargetsCard({
-  direction, entry, stop, currentPrice, horizon, rr,
+  mode, direction, entry, stop, currentPrice, horizon, rr,
 }: {
+  mode: "SPOT" | "FUTURES";
   direction: "LONG" | "SHORT" | "NEUTRAL";
   entry: number; stop: number; currentPrice: number; horizon: string; rr: number;
 }) {
   const isLong = direction === "LONG";
   const isShort = direction === "SHORT";
-  const sideLabel = isLong ? "BUY" : isShort ? "SELL" : "WATCH";
-  const sideClass = isLong
+  const isSpot = mode === "SPOT";
+
+  // Spot is buy-only — invert SHORT to "AVOID / WAIT" in spot mode
+  const spotLockout = isSpot && isShort;
+  const sideLabel = spotLockout
+    ? "AVOID"
+    : isLong ? "BUY" : isShort ? "SELL/SHORT" : "WATCH";
+  const sideClass = spotLockout
+    ? "bg-bear/60 text-background"
+    : isLong
     ? "bg-bull/80 text-background"
     : isShort
     ? "bg-bear/80 text-background"
     : "bg-muted text-foreground";
 
-  const targets = TARGET_STEPS.map((pct, i) => {
+  const steps = isSpot ? TARGET_STEPS_SPOT : TARGET_STEPS_FUTURES;
+  const spotHorizon = isSpot
+    ? (horizon.includes("h") ? "3-14d" : horizon === "1-3d" ? "1-4w" : horizon)
+    : horizon;
+
+  const targets = steps.map((pct, i) => {
     const price = isShort ? entry * (1 - pct) : entry * (1 + pct);
     const hit = isLong
       ? currentPrice >= price
@@ -453,18 +475,33 @@ function TargetsCard({
   });
 
   const stopHit = isLong ? currentPrice <= stop : isShort ? currentPrice >= stop : false;
+  const lev = suggestLeverage(0);
 
   return (
     <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2.5">
+      {/* Mode chip */}
+      <div className="flex items-center justify-between">
+        <span className={cn(
+          "rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
+          isSpot ? "bg-[var(--neon-blue)]/20 text-[var(--neon-blue)]" : "bg-[var(--neon-purple)]/20 text-[var(--neon-purple)]",
+        )}>
+          {mode}
+        </span>
+        <span className="text-[10px] text-muted-foreground">
+          {isSpot ? "No leverage · cash position" : `Suggested leverage: ${lev}x isolated`}
+        </span>
+      </div>
+
       {/* Top: BUY price + Capital + horizon */}
       <div className="grid grid-cols-2 gap-2">
         <div className={cn("flex items-center justify-center rounded-md py-2 text-sm font-bold tracking-wide", sideClass)}>
           {sideLabel}: {fmtPrice(entry)}
         </div>
         <div className="flex items-center justify-center rounded-md bg-[var(--neon-orange)]/30 py-2 text-sm font-semibold text-[var(--neon-orange)]">
-          Capital: 2% · {horizon}
+          {isSpot ? "Capital: 5%" : "Capital: 2%"} · {spotHorizon}
         </div>
       </div>
+
 
       {/* Targets */}
       <div className="space-y-1.5">

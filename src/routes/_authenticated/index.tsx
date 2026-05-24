@@ -11,6 +11,7 @@ import { PriorityAlertTicker } from "@/components/whale/PriorityAlertTicker";
 import { ConfluenceScore } from "@/components/whale/ConfluenceScore";
 import { MasterSignal } from "@/components/whale/MasterSignal";
 import { SignalErrorBoundary } from "@/components/whale/SignalErrorBoundary";
+import { TradingRules } from "@/components/whale/TradingRules";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Below-the-fold panels: code-split + mount on scroll

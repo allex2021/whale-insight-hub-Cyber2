@@ -112,12 +112,33 @@ export function WhaleActivityFeed() {
   }, [liveTrades, speakTrade]);
 
 
+  const classified = useMemo(
+    () =>
+      merged.map((t) => ({
+        trade: t,
+        intent: classifyWhaleIntent({
+          sizeUsd: t.sizeUsd,
+          side: t.side,
+          exchange: t.exchange,
+        }),
+      })),
+    [merged],
+  );
+
+  const symbolFiltered = useMemo(
+    () =>
+      classified.filter(
+        ({ trade: t }) =>
+          selected.includes(t.asset as never) &&
+          (exchangeFilter === "ALL" || t.exchange === exchangeFilter),
+      ),
+    [classified, selected, exchangeFilter],
+  );
+
+  const noiseCount = useMemo(() => symbolFiltered.filter((c) => c.intent.isNoise).length, [symbolFiltered]);
   const filtered = useMemo(
-    () => merged.filter((t) =>
-      selected.includes(t.asset as never) &&
-      (exchangeFilter === "ALL" || t.exchange === exchangeFilter),
-    ),
-    [merged, selected, exchangeFilter],
+    () => (impactOnly ? symbolFiltered.filter((c) => !c.intent.isNoise) : symbolFiltered),
+    [symbolFiltered, impactOnly],
   );
 
   const anyConnected = status.binance || status.bybit || status.okx || status.hyperliquid;

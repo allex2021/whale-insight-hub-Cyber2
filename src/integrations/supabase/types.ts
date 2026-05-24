@@ -92,6 +92,99 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_channels: {
+        Row: {
+          bot_token: string | null
+          channel_type: string
+          chat_id: string | null
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          filter_assets: string[] | null
+          filter_sides: string[] | null
+          id: string
+          min_confidence: number
+          name: string
+          updated_at: string
+          webhook_url: string | null
+        }
+        Insert: {
+          bot_token?: string | null
+          channel_type: string
+          chat_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          filter_assets?: string[] | null
+          filter_sides?: string[] | null
+          id?: string
+          min_confidence?: number
+          name: string
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          bot_token?: string | null
+          channel_type?: string
+          chat_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          filter_assets?: string[] | null
+          filter_sides?: string[] | null
+          id?: string
+          min_confidence?: number
+          name?: string
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
+      broadcast_signals: {
+        Row: {
+          channel_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          sent_at: string | null
+          signal_id: string | null
+          status: string
+        }
+        Insert: {
+          channel_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          sent_at?: string | null
+          signal_id?: string | null
+          status?: string
+        }
+        Update: {
+          channel_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          sent_at?: string | null
+          signal_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_signals_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "broadcast_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcast_signals_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "ai_signals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -115,6 +208,27 @@ export type Database = {
           display_name?: string | null
           id?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -190,10 +304,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -320,6 +440,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

@@ -313,6 +313,7 @@ export function MasterSignal() {
 
             {/* Trade plan — Targets card */}
             <TargetsCard
+              mode={mode}
               direction={sig.direction}
               entry={sig.entry}
               stop={sig.stop}
@@ -320,6 +321,7 @@ export function MasterSignal() {
               horizon={sig.horizon}
               rr={sig.rr}
             />
+
 
 
             {/* AI button */}

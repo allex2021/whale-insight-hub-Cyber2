@@ -271,6 +271,34 @@ export function WhaleActivityFeed() {
             })}
           </div>
 
+          {/* Noise filter toggle */}
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-[10px]">
+            <div className="flex rounded-md border border-border bg-secondary/40 p-0.5">
+              <button
+                onClick={() => setImpactOnly(true)}
+                className={cn(
+                  "rounded px-2 py-0.5 font-mono font-bold uppercase transition-colors",
+                  impactOnly ? "bg-[var(--neon-purple)]/30 text-foreground" : "text-muted-foreground",
+                )}
+              >
+                Market Impact Only
+              </button>
+              <button
+                onClick={() => setImpactOnly(false)}
+                className={cn(
+                  "rounded px-2 py-0.5 font-mono font-bold uppercase transition-colors",
+                  !impactOnly ? "bg-[var(--neon-purple)]/30 text-foreground" : "text-muted-foreground",
+                )}
+              >
+                All Trades
+              </button>
+            </div>
+            <span className="font-mono text-muted-foreground">
+              Showing {filtered.length} of {symbolFiltered.length}
+              {noiseCount > 0 && <> · <span className="text-muted-foreground/80">{noiseCount} filtered as noise</span></>}
+            </span>
+          </div>
+
           {filtered.length === 0 ? (
             <EmptyState label="Waiting for whale trades… they will appear here in seconds." />
           ) : (
@@ -282,13 +310,20 @@ export function WhaleActivityFeed() {
                 <th className="px-2 py-2 text-left font-medium">Exch</th>
                 <th className="px-3 py-2 text-left font-medium">Asset</th>
                 <th className="px-3 py-2 text-left font-medium">Side</th>
+                <th className="px-2 py-2 text-left font-medium">Intent</th>
                 <th className="px-3 py-2 text-right font-medium">Price</th>
                 <th className="px-3 py-2 text-right font-medium">Size USD</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((t) => {
+              {filtered.map(({ trade: t, intent }) => {
                 const meta = EXCHANGE_META[t.exchange];
+                const badgeTone =
+                  intent.intent === "liquidation" ? "border-bear/60 bg-bear/15 text-bear" :
+                  intent.intent === "market_impact" ? "border-bull/50 bg-bull/10 text-bull" :
+                  intent.intent === "accumulation" || intent.intent === "distribution" ? "border-amber-500/50 bg-amber-500/10 text-amber-400" :
+                  intent.intent === "internal_transfer" ? "border-border bg-secondary/60 text-muted-foreground" :
+                  "border-border bg-secondary/40 text-muted-foreground";
                 return (
                 <tr key={t.id} className="border-b border-border/40 hover:bg-card-hover">
                   <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{ago(t.tradeTime)} ago</td>
@@ -306,6 +341,11 @@ export function WhaleActivityFeed() {
                     <span className={cn("inline-flex items-center gap-1 font-mono text-[11px] font-bold", t.side === "BUY" ? "text-bull" : "text-bear")}>
                       {t.side === "BUY" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                       {t.side}
+                    </span>
+                  </td>
+                  <td className="px-2 py-2">
+                    <span className={cn("inline-block rounded border px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase", badgeTone)}>
+                      {intent.emoji} {intent.label}
                     </span>
                   </td>
                   <td className="px-3 py-2 text-right font-mono text-muted-foreground">

@@ -13,7 +13,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminBroadcastsRouteImport } from './routes/_authenticated/admin.broadcasts'
 import { Route as ApiPublicCronGenerateAlertsRouteImport } from './routes/api/public/cron/generate-alerts'
+import { Route as ApiPublicCronBroadcastSignalsRouteImport } from './routes/api/public/cron/broadcast-signals'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -34,50 +38,103 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminBroadcastsRoute =
+  AuthenticatedAdminBroadcastsRouteImport.update({
+    id: '/broadcasts',
+    path: '/broadcasts',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const ApiPublicCronGenerateAlertsRoute =
   ApiPublicCronGenerateAlertsRouteImport.update({
     id: '/api/public/cron/generate-alerts',
     path: '/api/public/cron/generate-alerts',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronBroadcastSignalsRoute =
+  ApiPublicCronBroadcastSignalsRouteImport.update({
+    id: '/api/public/cron/broadcast-signals',
+    path: '/api/public/cron/broadcast-signals',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRoute
+  '/admin/broadcasts': typeof AuthenticatedAdminBroadcastsRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/api/public/cron/broadcast-signals': typeof ApiPublicCronBroadcastSignalsRoute
   '/api/public/cron/generate-alerts': typeof ApiPublicCronGenerateAlertsRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin/broadcasts': typeof AuthenticatedAdminBroadcastsRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
+  '/api/public/cron/broadcast-signals': typeof ApiPublicCronBroadcastSignalsRoute
   '/api/public/cron/generate-alerts': typeof ApiPublicCronGenerateAlertsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/admin/broadcasts': typeof AuthenticatedAdminBroadcastsRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/api/public/cron/broadcast-signals': typeof ApiPublicCronBroadcastSignalsRoute
   '/api/public/cron/generate-alerts': typeof ApiPublicCronGenerateAlertsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/settings' | '/api/public/cron/generate-alerts'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/admin'
+    | '/settings'
+    | '/admin/broadcasts'
+    | '/admin/'
+    | '/api/public/cron/broadcast-signals'
+    | '/api/public/cron/generate-alerts'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/settings' | '/' | '/api/public/cron/generate-alerts'
+  to:
+    | '/login'
+    | '/settings'
+    | '/'
+    | '/admin/broadcasts'
+    | '/admin'
+    | '/api/public/cron/broadcast-signals'
+    | '/api/public/cron/generate-alerts'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/admin'
     | '/_authenticated/settings'
     | '/_authenticated/'
+    | '/_authenticated/admin/broadcasts'
+    | '/_authenticated/admin/'
+    | '/api/public/cron/broadcast-signals'
     | '/api/public/cron/generate-alerts'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicCronBroadcastSignalsRoute: typeof ApiPublicCronBroadcastSignalsRoute
   ApiPublicCronGenerateAlertsRoute: typeof ApiPublicCronGenerateAlertsRoute
 }
 
@@ -111,6 +168,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/broadcasts': {
+      id: '/_authenticated/admin/broadcasts'
+      path: '/broadcasts'
+      fullPath: '/admin/broadcasts'
+      preLoaderRoute: typeof AuthenticatedAdminBroadcastsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/api/public/cron/generate-alerts': {
       id: '/api/public/cron/generate-alerts'
       path: '/api/public/cron/generate-alerts'
@@ -118,15 +196,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronGenerateAlertsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/broadcast-signals': {
+      id: '/api/public/cron/broadcast-signals'
+      path: '/api/public/cron/broadcast-signals'
+      fullPath: '/api/public/cron/broadcast-signals'
+      preLoaderRoute: typeof ApiPublicCronBroadcastSignalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminBroadcastsRoute: typeof AuthenticatedAdminBroadcastsRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminBroadcastsRoute: AuthenticatedAdminBroadcastsRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
 interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
@@ -138,6 +238,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicCronBroadcastSignalsRoute: ApiPublicCronBroadcastSignalsRoute,
   ApiPublicCronGenerateAlertsRoute: ApiPublicCronGenerateAlertsRoute,
 }
 export const routeTree = rootRouteImport

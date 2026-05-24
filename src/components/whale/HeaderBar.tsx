@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity, LogOut, Settings as SettingsIcon } from "lucide-react";
+import { Activity, LogOut, Settings as SettingsIcon, Shield } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,6 +7,7 @@ import { fetchMarketGlobals } from "@/lib/whale/market.functions";
 import { useBinancePriceStream } from "@/hooks/useBinanceWhaleStream";
 import { fmtPct, fmtUSD } from "@/lib/whale/format";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 function fgColor(v: number) {
   if (v >= 75) return "text-bull";
@@ -27,6 +28,7 @@ export function HeaderBar() {
   const [updated, setUpdated] = useState<string>("--:--:--");
   const [email, setEmail] = useState<string | null>(null);
   const navigate = useNavigate();
+  const isAdmin = useIsAdmin();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
@@ -103,6 +105,12 @@ export function HeaderBar() {
             <Activity className="h-3 w-3 text-bull" />
             <span className="text-muted-foreground hidden sm:inline">{updated}</span>
           </div>
+          {isAdmin && (
+            <Link to="/admin" title="Admin Panel"
+              className="rounded-md border border-[var(--neon-purple)]/40 bg-[var(--neon-purple)]/10 p-1.5 text-[var(--neon-purple)] hover:bg-[var(--neon-purple)]/20">
+              <Shield className="h-3.5 w-3.5" />
+            </Link>
+          )}
           <Link to="/settings" title="Settings"
             className="rounded-md border border-border bg-secondary p-1.5 hover:border-border-bright">
             <SettingsIcon className="h-3.5 w-3.5" />

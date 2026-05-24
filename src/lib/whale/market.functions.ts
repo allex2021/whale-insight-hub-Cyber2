@@ -259,6 +259,8 @@ export const fetchNewsServer = createServerFn({ method: "GET" }).handler(async (
     return data;
   } catch (error) {
     console.error("Failed to fetch crypto news:", error);
+    // Serve stale cache up to 1h on upstream failure
+    if (newsCache && Date.now() - newsCache.at < NEWS_STALE_MS) return newsCache.data;
     if (newsCache) return newsCache.data;
     newsCache = { at: Date.now(), data: [] };
     return [];

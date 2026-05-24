@@ -28,6 +28,7 @@ export function HeaderBar() {
   const [updated, setUpdated] = useState<string>("--:--:--");
   const [email, setEmail] = useState<string | null>(null);
   const navigate = useNavigate();
+  const isAdmin = useIsAdmin();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));

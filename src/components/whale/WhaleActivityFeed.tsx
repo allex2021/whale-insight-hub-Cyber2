@@ -72,6 +72,7 @@ export function WhaleActivityFeed() {
   const [tier, setTier] = useState<number>(100_000);
   const [mounted, setMounted] = useState(false);
   const [exchangeFilter, setExchangeFilter] = useState<ExchangeId | "ALL">("ALL");
+  const [impactOnly, setImpactOnly] = useState(true);
   const { trades: liveTrades, status } = useMultiExchangeWhaleStream(tier, 200);
   const { selected } = useSymbolFilter();
   const { speakTrade, muted, toggleMuted } = useWhaleAlertSound();

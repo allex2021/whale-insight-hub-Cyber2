@@ -62,9 +62,34 @@ export const fetchMarketGlobals = createServerFn({ method: "GET" }).handler(asyn
   }
 });
 
-// ============ NEWS (CoinDesk Data API — no auth required) ============
+// ============ NEWS (CoinDesk + CryptoCompare fallback — no auth) ============
 let newsCache: { at: number; data: NewsItem[] } | null = null;
-const NEWS_TTL_MS = 5 * 60_000; // 5 min — AI calls are expensive
+const NEWS_TTL_MS = 10 * 60_000; // 10 min — AI calls are expensive
+const NEWS_STALE_MS = 60 * 60_000; // serve stale up to 1h on upstream errors
+
+async function fetchCoinDesk(): Promise<CoinDeskNewsRow[]> {
+  const r = await fetch("https://data-api.coindesk.com/news/v1/article/list?lang=EN&limit=20");
+  if (!r.ok) throw new Error(`coindesk ${r.status}`);
+  const j = (await r.json()) as { Data?: CoinDeskNewsRow[] };
+  return Array.isArray(j?.Data) ? j.Data.slice(0, 20) : [];
+}
+
+async function fetchCryptoCompare(): Promise<CoinDeskNewsRow[]> {
+  const r = await fetch("https://min-api.cryptocompare.com/data/v2/news/?lang=EN");
+  if (!r.ok) throw new Error(`cryptocompare ${r.status}`);
+  const j = (await r.json()) as {
+    Data?: Array<{ id?: string; title?: string; url?: string; published_on?: number; body?: string; source?: string; categories?: string }>;
+  };
+  return (j.Data ?? []).slice(0, 20).map((p) => ({
+    ID: Number(p.id) || undefined,
+    TITLE: p.title,
+    URL: p.url,
+    PUBLISHED_ON: p.published_on,
+    BODY: p.body,
+    SOURCE_DATA: { NAME: p.source ?? "CryptoCompare" },
+    KEYWORDS: p.categories,
+  }));
+}
 
 type CoinDeskNewsRow = {
   ID?: number;
@@ -190,10 +215,14 @@ async function batchAnalyzeWithAI(items: { id: string; title: string; body?: str
 export const fetchNewsServer = createServerFn({ method: "GET" }).handler(async (): Promise<NewsItem[]> => {
   if (newsCache && Date.now() - newsCache.at < NEWS_TTL_MS) return newsCache.data;
   try {
-    const r = await fetch("https://data-api.coindesk.com/news/v1/article/list?lang=EN&limit=20");
-    if (!r.ok) throw new Error(`coindesk ${r.status}`);
-    const j = (await r.json()) as { Data?: CoinDeskNewsRow[] };
-    const rows = (Array.isArray(j?.Data) ? j.Data : []).slice(0, 20);
+    let rows: CoinDeskNewsRow[] = [];
+    try {
+      rows = await fetchCoinDesk();
+    } catch (cdErr) {
+      console.warn("CoinDesk failed, trying CryptoCompare:", cdErr);
+      rows = await fetchCryptoCompare();
+    }
+    if (rows.length === 0) throw new Error("no news rows");
 
     // Batched Gemini analysis on top 12 headlines (single AI call)
     const top = rows.slice(0, 12).map((p, i) => ({

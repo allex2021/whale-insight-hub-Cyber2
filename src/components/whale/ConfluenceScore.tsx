@@ -276,7 +276,14 @@ export function ConfluenceScore() {
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
           {/* Gauge */}
           <div className="relative shrink-0">
-            <svg width="180" height="180" viewBox="0 0 180 180" className="-rotate-[135deg]">
+            {(score >= 70 || score <= 30) && (
+              <span
+                className="pointer-events-none absolute inset-2 rounded-full animate-ping"
+                style={{ boxShadow: `0 0 0 4px ${color}`, opacity: 0.35 }}
+                aria-hidden
+              />
+            )}
+            <svg width="180" height="180" viewBox="0 0 180 180" className="relative -rotate-[135deg]">
               <circle
                 cx="90" cy="90" r="70"
                 fill="none" stroke="hsl(var(--border))" strokeWidth="14"
@@ -301,7 +308,10 @@ export function ConfluenceScore() {
           <div className="flex-1 space-y-3">
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{selected} Verdict</div>
-              <div className="text-2xl font-bold" style={{ color }}>{current.result.label}</div>
+              <div className="flex flex-wrap items-baseline gap-2">
+                <div className="text-2xl font-bold" style={{ color }}>{current.result.label}</div>
+                <div className="font-mono text-[11px] text-muted-foreground">{current.result.confidence}% confidence</div>
+              </div>
             </div>
 
             <button

@@ -137,8 +137,9 @@ function Dashboard() {
             <LazyMount minHeight={280}><SupportResistance /></LazyMount>
             <LazyMount minHeight={320}><StablecoinSupply /></LazyMount>
             <LazyMount minHeight={360}><CustomAlertBuilder /></LazyMount>
-            
+            <TradingRules />
           </TabsContent>
+
         </Tabs>
 
         <footer className="border-t border-border pt-6 pb-10 text-center text-xs text-muted-foreground">

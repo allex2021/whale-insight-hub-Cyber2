@@ -10,6 +10,7 @@ import { LazyMount } from "@/components/whale/LazyMount";
 import { PriorityAlertTicker } from "@/components/whale/PriorityAlertTicker";
 import { ConfluenceScore } from "@/components/whale/ConfluenceScore";
 import { MasterSignal } from "@/components/whale/MasterSignal";
+import { SignalErrorBoundary } from "@/components/whale/SignalErrorBoundary";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Below-the-fold panels: code-split + mount on scroll
@@ -71,10 +72,14 @@ function Dashboard() {
       <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-6 lg:px-8">
         <PriorityAlertTicker />
         <div className="rounded-xl border-2 border-[var(--neon-purple)]/60 bg-gradient-to-br from-[var(--neon-purple)]/10 to-[var(--neon-blue)]/5 p-1 shadow-[0_0_40px_rgba(168,85,247,0.3)]">
-          <MasterSignal />
+          <SignalErrorBoundary label="Master Signal">
+            <MasterSignal />
+          </SignalErrorBoundary>
         </div>
         <div className="rounded-xl border border-[var(--neon-purple)]/30 bg-card/30 p-1 shadow-[0_0_20px_rgba(168,85,247,0.15)]">
-          <ConfluenceScore />
+          <SignalErrorBoundary label="Confluence Score">
+            <ConfluenceScore />
+          </SignalErrorBoundary>
         </div>
         <MacroBar />
         <SymbolFilter />

@@ -62,6 +62,7 @@ export const Route = createFileRoute("/_authenticated/")({
 const TABS = [
   { v: "live", label: "Live" },
   { v: "derivs", label: "Derivatives" },
+  { v: "heatmap", label: "Heatmap" },
   { v: "ai", label: "AI" },
   { v: "macro", label: "Macro & Alerts" },
 ] as const;

@@ -11,6 +11,7 @@ interface SignalBreakdown { name: string; value: string; weight: number }
 interface ConfluenceResult {
   score: number;          // 0-100
   label: string;
+  confidence: number;     // 0-100
   tone: "bull" | "bear" | "warn" | "default";
   signals: SignalBreakdown[];
 }
@@ -30,71 +31,71 @@ function calculateConfluenceScore(input: RawInputs): ConfluenceResult {
   let score = 50;
   const signals: SignalBreakdown[] = [];
 
-  // Funding rate — contrarian (weight ±20)
-  const frBp = input.fundingRate * 10000; // basis points equivalent
-  if (input.fundingRate > 0.0001) {
-    const w = -Math.min(20, Math.abs(frBp));
-    score += w;
-    signals.push({ name: "Funding Rate", value: `${(input.fundingRate * 100).toFixed(4)}% (over-leveraged longs)`, weight: w });
-  } else if (input.fundingRate < -0.0001) {
-    const w = Math.min(20, Math.abs(frBp));
-    score += w;
-    signals.push({ name: "Funding Rate", value: `${(input.fundingRate * 100).toFixed(4)}% (over-leveraged shorts)`, weight: w });
-  } else {
-    signals.push({ name: "Funding Rate", value: "Neutral", weight: 0 });
-  }
+  // 1. Funding rate — contrarian (weight ±22)
+  const frImpact = Math.max(-22, Math.min(22, -(input.fundingRate / 0.001) * 22));
+  score += frImpact;
+  signals.push({
+    name: "Funding Rate",
+    value: `${(input.fundingRate * 100).toFixed(4)}%`,
+    weight: Math.round(frImpact),
+  });
 
-  // L/S Ratio (weight ±15)
+  // 2. L/S Ratio (weight ±18)
   let lsW = 0;
-  if (input.longShortRatio > 1.5) lsW = -10;
-  else if (input.longShortRatio < 0.7) lsW = 15;
+  if (input.longShortRatio < 0.8) lsW = 18;
+  else if (input.longShortRatio < 1.0) lsW = 8;
+  else if (input.longShortRatio > 1.6) lsW = -18;
+  else if (input.longShortRatio > 1.3) lsW = -8;
   score += lsW;
   signals.push({ name: "L/S Ratio", value: input.longShortRatio.toFixed(2), weight: lsW });
 
-  // Order Book Imbalance (weight ±15)
-  const obW = Math.round(input.orderBookImbalance * 15);
-  score += obW;
-  signals.push({
-    name: "Order Book",
-    value: input.orderBookImbalance > 0.05 ? "Bid-heavy" : input.orderBookImbalance < -0.05 ? "Ask-heavy" : "Balanced",
-    weight: obW,
-  });
-
-  // Fear & Greed — contrarian (weight ±10)
+  // 3. Fear & Greed — contrarian (weight ±16)
   let fgW = 0;
-  if (input.fearGreedIndex < 20) fgW = 10;
-  else if (input.fearGreedIndex > 80) fgW = -10;
+  if (input.fearGreedIndex < 20) fgW = 16;
+  else if (input.fearGreedIndex < 35) fgW = 7;
+  else if (input.fearGreedIndex > 80) fgW = -16;
+  else if (input.fearGreedIndex > 65) fgW = -7;
   score += fgW;
   signals.push({ name: "Fear & Greed", value: `${input.fearGreedIndex}/100`, weight: fgW });
 
-  // OI Change 1h (weight ±5)
-  let oiW = 0;
-  if (input.openInterestChange1h > 3) oiW = 5;
-  else if (input.openInterestChange1h < -3) oiW = -5;
+  // 4. Open Interest 1h change (weight ±14)
+  const oiW = Math.max(-14, Math.min(14, (input.openInterestChange1h / 5) * 14));
   score += oiW;
-  signals.push({ name: "OI Change 1h", value: `${input.openInterestChange1h >= 0 ? "+" : ""}${input.openInterestChange1h.toFixed(2)}%`, weight: oiW });
+  signals.push({
+    name: "OI Change 1h",
+    value: `${input.openInterestChange1h >= 0 ? "+" : ""}${input.openInterestChange1h.toFixed(2)}%`,
+    weight: Math.round(oiW),
+  });
 
-  // Whale bias (weight ±15)
-  let wbW = 0;
-  if (input.whaleBias === "long") wbW = 15;
-  else if (input.whaleBias === "short") wbW = -15;
+  // 5. Whale bias (weight ±18)
+  const wbW = input.whaleBias === "long" ? 18 : input.whaleBias === "short" ? -18 : 0;
   score += wbW;
   signals.push({
-    name: "Whale Bias 6h",
+    name: "Whale Flow",
     value: `${input.whaleBuyCount}B / ${input.whaleSellCount}S — ${input.whaleBias.toUpperCase()}`,
     weight: wbW,
   });
 
+  // 6. Order book bias (weight ±12)
+  const obW = Math.round(input.orderBookImbalance * 12);
+  score += obW;
+  signals.push({
+    name: "Order Book",
+    value: input.orderBookImbalance > 0.3 ? "Bid-Heavy" : input.orderBookImbalance < -0.3 ? "Ask-Heavy" : "Balanced",
+    weight: obW,
+  });
+
   score = Math.max(0, Math.min(100, Math.round(score)));
   const label =
-    score >= 75 ? "Strongly Bullish" :
-    score >= 60 ? "Bullish" :
-    score >= 40 ? "Neutral" :
-    score >= 25 ? "Bearish" :
-    "Strongly Bearish";
+    score >= 76 ? "STRONGLY BULLISH" :
+    score >= 60 ? "BULLISH" :
+    score >= 45 ? "NEUTRAL" :
+    score >= 28 ? "BEARISH" :
+    "STRONGLY BEARISH";
   const tone: ConfluenceResult["tone"] =
     score >= 60 ? "bull" : score <= 40 ? "bear" : score >= 50 ? "default" : "warn";
-  return { score, label, tone, signals };
+  const confidence = Math.round(Math.abs(score - 50) * 2);
+  return { score, label, confidence, tone, signals };
 }
 
 async function fetchAssetInputs(asset: Asset): Promise<RawInputs> {
@@ -275,7 +276,14 @@ export function ConfluenceScore() {
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
           {/* Gauge */}
           <div className="relative shrink-0">
-            <svg width="180" height="180" viewBox="0 0 180 180" className="-rotate-[135deg]">
+            {(score >= 70 || score <= 30) && (
+              <span
+                className="pointer-events-none absolute inset-2 rounded-full animate-ping"
+                style={{ boxShadow: `0 0 0 4px ${color}`, opacity: 0.35 }}
+                aria-hidden
+              />
+            )}
+            <svg width="180" height="180" viewBox="0 0 180 180" className="relative -rotate-[135deg]">
               <circle
                 cx="90" cy="90" r="70"
                 fill="none" stroke="hsl(var(--border))" strokeWidth="14"
@@ -300,7 +308,10 @@ export function ConfluenceScore() {
           <div className="flex-1 space-y-3">
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{selected} Verdict</div>
-              <div className="text-2xl font-bold" style={{ color }}>{current.result.label}</div>
+              <div className="flex flex-wrap items-baseline gap-2">
+                <div className="text-2xl font-bold" style={{ color }}>{current.result.label}</div>
+                <div className="font-mono text-[11px] text-muted-foreground">{current.result.confidence}% confidence</div>
+              </div>
             </div>
 
             <button

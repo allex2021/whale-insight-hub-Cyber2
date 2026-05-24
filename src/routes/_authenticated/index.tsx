@@ -62,6 +62,7 @@ export const Route = createFileRoute("/_authenticated/")({
 const TABS = [
   { v: "live", label: "Live" },
   { v: "derivs", label: "Derivatives" },
+  { v: "heatmap", label: "Heatmap" },
   { v: "ai", label: "AI" },
   { v: "macro", label: "Macro & Alerts" },
 ] as const;
@@ -117,14 +118,18 @@ function Dashboard() {
 
           <TabsContent value="derivs" className="space-y-4 mt-4">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <LazyMount minHeight={360}><LiquidationHeatmap /></LazyMount>
               <LazyMount minHeight={360}><FundingRateMonitor /></LazyMount>
+              <LazyMount minHeight={360}><OpenInterestTracker /></LazyMount>
             </div>
             <LazyMount minHeight={320}><LiquidationFeed /></LazyMount>
-            <LazyMount minHeight={320}><OpenInterestTracker /></LazyMount>
             <LazyMount minHeight={420}><DeribitOptionsPanel /></LazyMount>
             <LazyMount minHeight={360}><OptionsFlow /></LazyMount>
           </TabsContent>
+
+          <TabsContent value="heatmap" className="space-y-4 mt-4">
+            <LazyMount minHeight={520}><LiquidationHeatmap /></LazyMount>
+          </TabsContent>
+
 
           <TabsContent value="ai" className="space-y-4 mt-4">
             <LazyMount minHeight={400}><AITradingSignals /></LazyMount>

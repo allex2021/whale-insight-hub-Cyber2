@@ -11,6 +11,7 @@ import { PriorityAlertTicker } from "@/components/whale/PriorityAlertTicker";
 import { ConfluenceScore } from "@/components/whale/ConfluenceScore";
 import { MasterSignal } from "@/components/whale/MasterSignal";
 import { SignalErrorBoundary } from "@/components/whale/SignalErrorBoundary";
+import { TradingRules } from "@/components/whale/TradingRules";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Below-the-fold panels: code-split + mount on scroll
@@ -136,8 +137,9 @@ function Dashboard() {
             <LazyMount minHeight={280}><SupportResistance /></LazyMount>
             <LazyMount minHeight={320}><StablecoinSupply /></LazyMount>
             <LazyMount minHeight={360}><CustomAlertBuilder /></LazyMount>
-            
+            <TradingRules />
           </TabsContent>
+
         </Tabs>
 
         <footer className="border-t border-border pt-6 pb-10 text-center text-xs text-muted-foreground">

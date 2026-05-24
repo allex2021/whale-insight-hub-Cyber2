@@ -147,14 +147,16 @@ const SOUND_ROWS: { key: SoundKey; label: string; desc: string }[] = [
 ];
 
 function SoundSettingsSection() {
-  const { settings, setEnabled, setVolume } = useSoundSettings();
-  const { playPump, playDump, playUrgent } = useWhaleAlertSound();
+  const { settings, setEnabled, setVolume, setVoiceEnabled, setVoiceMinUsd } = useSoundSettings();
+  const { playPump, playDump, playUrgent, speakTrade } = useWhaleAlertSound();
 
   const test = (k: SoundKey) => {
     if (k === "urgent") playUrgent();
     else if (k === "dump") playDump(k);
     else playPump(k);
   };
+
+  const testVoice = () => speakTrade("BUY", "BTC", 1_250_000);
 
   return (
     <section className="rounded-xl border border-border bg-card/60 p-5 space-y-4">
@@ -174,6 +176,39 @@ function SoundSettingsSection() {
           className="mt-1 w-full accent-[var(--neon-purple)]"
         />
       </label>
+
+      <div className="rounded-md border border-[var(--neon-purple)]/40 bg-[var(--neon-purple)]/5 p-3 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-semibold">Voice announcements</div>
+            <div className="text-[10px] text-muted-foreground">
+              Speak large trades aloud (e.g. "Buying 1.2 million BTC") instead of beeping.
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={testVoice}
+              className="rounded border border-border bg-secondary px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground hover:border-border-bright hover:text-foreground">
+              Test
+            </button>
+            <input type="checkbox" checked={settings.voiceEnabled}
+              onChange={(e) => setVoiceEnabled(e.target.checked)}
+              className="h-4 w-4 accent-[var(--neon-purple)]" />
+          </div>
+        </div>
+        {settings.voiceEnabled && (
+          <label className="block">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Voice min trade size (USD)</span>
+              <span className="font-mono text-xs">${(settings.voiceMinUsd / 1000).toFixed(0)}K</span>
+            </div>
+            <input type="range" min={100_000} max={5_000_000} step={50_000}
+              value={settings.voiceMinUsd}
+              onChange={(e) => setVoiceMinUsd(Number(e.target.value))}
+              className="mt-1 w-full accent-[var(--neon-purple)]" />
+            <div className="mt-1 text-[10px] text-muted-foreground">Smaller trades will still beep.</div>
+          </label>
+        )}
+      </div>
 
       <div className="space-y-2">
         {SOUND_ROWS.map((r) => (

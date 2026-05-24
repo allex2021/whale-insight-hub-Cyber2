@@ -436,11 +436,11 @@ function suggestLeverage(confidence: number): number {
 }
 
 function TargetsCard({
-  mode, direction, entry, stop, currentPrice, horizon, rr,
+  mode, direction, entry, stop, currentPrice, horizon, rr, confidence,
 }: {
   mode: "SPOT" | "FUTURES";
   direction: "LONG" | "SHORT" | "NEUTRAL";
-  entry: number; stop: number; currentPrice: number; horizon: string; rr: number;
+  entry: number; stop: number; currentPrice: number; horizon: string; rr: number; confidence: number;
 }) {
   const isLong = direction === "LONG";
   const isShort = direction === "SHORT";

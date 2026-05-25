@@ -101,9 +101,9 @@ export interface LiqHeatmap {
 }
 
 const RANGE_MAP: Record<LiqRange, { period: string; limit: number; spread: number }> = {
-  "1H":  { period: "5m",  limit: 12, spread: 0.05 },
-  "4H":  { period: "15m", limit: 16, spread: 0.10 },
-  "12H": { period: "1h",  limit: 12, spread: 0.15 },
+  "1H":  { period: "5m",  limit: 12, spread: 0.04 },
+  "4H":  { period: "15m", limit: 16, spread: 0.08 },
+  "12H": { period: "1h",  limit: 12, spread: 0.14 },
   "24H": { period: "1h",  limit: 24, spread: 0.22 },
 };
 
@@ -122,6 +122,96 @@ async function okxOI(sym: Symbol, signal?: AbortSignal): Promise<number> {
   return oiCcy * last;
 }
 
+// ----- Hyperliquid live positions (browser fetch; HL API allows CORS) -----
+type HLLBRow = {
+  ethAddress: string;
+  accountValue: string;
+  windowPerformances: Array<[string, { pnl: string; roi: string; vlm: string }]>;
+};
+type HLAssetPos = {
+  position: {
+    coin: string;
+    szi: string;
+    entryPx: string;
+    leverage: { value: number };
+    liquidationPx: string | null;
+    positionValue: string;
+  };
+};
+type HLPos = { coin: string; side: "LONG" | "SHORT"; liqPx: number; sizeUsd: number };
+
+const HL_CACHE = new Map<string, { at: number; pos: HLPos[] }>();
+async function fetchHLPositions(symbol: Symbol, signal?: AbortSignal): Promise<HLPos[]> {
+  const cached = HL_CACHE.get(symbol);
+  if (cached && Date.now() - cached.at < 45_000) return cached.pos;
+  try {
+    const lbRes = await fetch("https://stats-data.hyperliquid.xyz/Mainnet/leaderboard", { signal });
+    if (!lbRes.ok) return [];
+    const lb = (await lbRes.json()) as { leaderboardRows: HLLBRow[] };
+    const dayVlm = (r: HLLBRow) => {
+      const w = r.windowPerformances.find(([k]) => k === "day");
+      return w ? parseFloat(w[1].vlm) : 0;
+    };
+    const top = lb.leaderboardRows
+      .filter((r) => parseFloat(r.accountValue) > 250_000)
+      .sort((a, b) => dayVlm(b) - dayVlm(a))
+      .slice(0, 50);
+
+    const states = await Promise.all(
+      top.map(async (r) => {
+        try {
+          const res = await fetch("https://api.hyperliquid.xyz/info", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "clearinghouseState", user: r.ethAddress }),
+            signal,
+          });
+          if (!res.ok) return null;
+          return (await res.json()) as { assetPositions: HLAssetPos[] };
+        } catch {
+          return null;
+        }
+      }),
+    );
+
+    const out: HLPos[] = [];
+    for (const s of states) {
+      if (!s?.assetPositions) continue;
+      for (const ap of s.assetPositions) {
+        const p = ap.position;
+        if (p.coin !== symbol) continue;
+        if (!p.liquidationPx) continue;
+        const liqPx = parseFloat(p.liquidationPx);
+        const sizeUsd = parseFloat(p.positionValue);
+        if (!liqPx || !sizeUsd) continue;
+        out.push({
+          coin: p.coin,
+          side: parseFloat(p.szi) >= 0 ? "LONG" : "SHORT",
+          liqPx,
+          sizeUsd,
+        });
+      }
+    }
+    HL_CACHE.set(symbol, { at: Date.now(), pos: out });
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+type DepthLevel = [string, string]; // [price, qty]
+async function fetchBinanceDepth(symbol: Symbol, signal?: AbortSignal) {
+  try {
+    const j = (await jget(
+      `https://fapi.binance.com/fapi/v1/depth?symbol=${symbol}USDT&limit=500`,
+      signal,
+    )) as { bids: DepthLevel[]; asks: DepthLevel[] };
+    return { bids: j.bids, asks: j.asks };
+  } catch {
+    return { bids: [] as DepthLevel[], asks: [] as DepthLevel[] };
+  }
+}
+
 export async function fetchLiqHeatmap(
   opts: { symbol?: Symbol; range?: LiqRange } = {},
   signal?: AbortSignal,
@@ -130,11 +220,13 @@ export async function fetchLiqHeatmap(
   const range: LiqRange = opts.range ?? "4H";
   const { period, limit, spread } = RANGE_MAP[range];
 
-  const [oiHist, ticker, byb, okx] = await Promise.all([
+  const [oiHist, ticker, byb, okx, hlPos, depth] = await Promise.all([
     jget(`https://fapi.binance.com/futures/data/openInterestHist?symbol=${symbol}USDT&period=${period}&limit=${limit}`, signal) as Promise<Array<{ sumOpenInterestValue: string; timestamp: number }>>,
     jget(`https://fapi.binance.com/fapi/v1/ticker/price?symbol=${symbol}USDT`, signal) as Promise<{ price: string }>,
     bybitOI(symbol, signal).catch(() => 0),
     okxOI(symbol, signal).catch(() => 0),
+    fetchHLPositions(symbol, signal),
+    fetchBinanceDepth(symbol, signal),
   ]);
 
   const spot = parseFloat(ticker.price);
@@ -143,41 +235,80 @@ export async function fetchLiqHeatmap(
   const oiDeltaPct = binanceOIFirst ? ((binanceOIVal - binanceOIFirst) / binanceOIFirst) * 100 : 0;
   const totalOI = binanceOIVal + byb + okx;
 
-  // Liquidation density model: derive cluster zones from common leverage tiers.
-  // Long liqs sit below spot (where longs get liquidated), shorts above.
-  // Common leverage clusters: 10x (~10%), 20x (~5%), 25x (~4%), 50x (~2%), 100x (~1%).
   const BUCKETS = 60;
-  const step = (spot * spread * 2) / BUCKETS;
-  const half = BUCKETS / 2;
-
-  // Bias toward longs/shorts from OI delta: rising OI in a downtrend = more long liq risk, etc.
-  const longBias = 1 + Math.max(-0.4, Math.min(0.4, oiDeltaPct / 50));
-  const shortBias = 1 + Math.max(-0.4, Math.min(0.4, -oiDeltaPct / 50));
-
-  // Range-scaled leverage cluster positions (as fraction of spread)
-  const clusterFracs = [0.05, 0.10, 0.18, 0.35, 0.60, 0.85].map((f) => f);
+  const low = spot * (1 - spread);
+  const high = spot * (1 + spread);
+  const step = (high - low) / BUCKETS;
+  const priceDecimals = symbol === "SOL" || symbol === "LTC" ? 2 : 0;
   const buckets: LiqBucket[] = [];
-  for (let i = -half; i < half; i++) {
-    const price = +(spot + step * i).toFixed(symbol === "SOL" ? 2 : 0);
-    const dist = Math.abs(i) / half; // 0..1 fraction of spread
-    const weight = clusterFracs.reduce((s, f) => {
-      const sharpness = 14 / (1 + f * 3); // tighter peaks for low-lev clusters
-      return s + Math.exp(-Math.pow((dist - f) * sharpness, 2));
-    }, 0);
-    const base = (totalOI / BUCKETS) * weight * 0.06;
-    const longLiq  = i < 0 ? base * longBias  : 0;
-    const shortLiq = i > 0 ? base * shortBias : 0;
-    buckets.push({ price, longLiq, shortLiq });
+  for (let i = 0; i < BUCKETS; i++) {
+    const price = +(low + step * (i + 0.5)).toFixed(priceDecimals);
+    buckets.push({ price, longLiq: 0, shortLiq: 0 });
+  }
+  const bucketIndex = (p: number) => {
+    if (p < low || p >= high) return -1;
+    return Math.min(BUCKETS - 1, Math.max(0, Math.floor((p - low) / step)));
+  };
+
+  // 1) Real Hyperliquid liquidation prices (dominant signal)
+  let hlLongUsd = 0;
+  let hlShortUsd = 0;
+  for (const p of hlPos) {
+    const idx = bucketIndex(p.liqPx);
+    if (idx < 0) continue;
+    if (p.side === "LONG") {
+      buckets[idx].longLiq += p.sizeUsd;
+      hlLongUsd += p.sizeUsd;
+    } else {
+      buckets[idx].shortLiq += p.sizeUsd;
+      hlShortUsd += p.sizeUsd;
+    }
+  }
+
+  // 2) Binance order-book pressure → walls act as magnets where stops cluster
+  //    Bids below spot map to long-liq risk (longs liquidate if price falls into bid void),
+  //    Asks above spot map to short-liq risk. Scale qty * price to USD; weight 0.4x of OB notional.
+  const OB_WEIGHT = 0.4;
+  for (const [pxS, qtyS] of depth.bids) {
+    const px = parseFloat(pxS);
+    const idx = bucketIndex(px);
+    if (idx < 0 || px >= spot) continue;
+    buckets[idx].longLiq += parseFloat(qtyS) * px * OB_WEIGHT;
+  }
+  for (const [pxS, qtyS] of depth.asks) {
+    const px = parseFloat(pxS);
+    const idx = bucketIndex(px);
+    if (idx < 0 || px <= spot) continue;
+    buckets[idx].shortLiq += parseFloat(qtyS) * px * OB_WEIGHT;
+  }
+
+  // 3) Fallback synthetic floor when HL+OB returned nothing meaningful
+  //    (keeps the chart populated for assets with thin HL participation).
+  const realTotal = buckets.reduce((s, b) => s + b.longLiq + b.shortLiq, 0);
+  if (realTotal < totalOI * 0.005 && totalOI > 0) {
+    const longBias = 1 + Math.max(-0.4, Math.min(0.4, oiDeltaPct / 50));
+    const shortBias = 1 + Math.max(-0.4, Math.min(0.4, -oiDeltaPct / 50));
+    const half = BUCKETS / 2;
+    const clusterFracs = [0.05, 0.10, 0.18, 0.35, 0.60, 0.85];
+    for (let i = 0; i < BUCKETS; i++) {
+      const dist = Math.abs(i - half) / half;
+      const weight = clusterFracs.reduce((s, f) => {
+        const sharpness = 14 / (1 + f * 3);
+        return s + Math.exp(-Math.pow((dist - f) * sharpness, 2));
+      }, 0);
+      const base = (totalOI / BUCKETS) * weight * 0.04;
+      if (i < half) buckets[i].longLiq += base * longBias;
+      else buckets[i].shortLiq += base * shortBias;
+    }
   }
 
   const longTotal = buckets.reduce((s, b) => s + b.longLiq, 0);
   const shortTotal = buckets.reduce((s, b) => s + b.shortLiq, 0);
 
-  // Top 6 clusters (mix of long and short)
   const clusters: LiqCluster[] = buckets
     .map((b) => {
       const usd = b.longLiq + b.shortLiq;
-      const side: "LONG" | "SHORT" = b.longLiq > b.shortLiq ? "LONG" : "SHORT";
+      const side: "LONG" | "SHORT" = b.longLiq >= b.shortLiq ? "LONG" : "SHORT";
       return { price: b.price, usd, side, distancePct: ((b.price - spot) / spot) * 100 };
     })
     .filter((c) => c.usd > 0)
@@ -191,6 +322,10 @@ export async function fetchLiqHeatmap(
     exchanges: { binance: binanceOIVal, bybit: byb, okx },
   };
 }
+
+// Expose for diagnostics / future panels
+export type { HLPos };
+export const _hlLiqCache = HL_CACHE;
 
 // ============ CROSS-EXCHANGE SIGNAL ============
 async function binanceTicker(sym: Symbol, signal?: AbortSignal) {

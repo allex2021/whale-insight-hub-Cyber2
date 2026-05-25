@@ -313,27 +313,18 @@ export function ConfluenceScore() {
       action={
         <>
           <div className="flex gap-1 rounded-md border border-border bg-secondary/40 p-0.5">
-            {ASSETS.map((a) => {
-              const s = states[a].result?.score;
-              return (
-                <button
-                  key={a}
-                  onClick={() => setSelected(a)}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px] font-bold transition-colors",
-                    selected === a ? "bg-[var(--neon-purple)]/30 text-foreground" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {a}
-                  {s !== undefined && (
-                    <span className="font-mono" style={{ color: gaugeColor(s) }}>{s}</span>
-                  )}
-                </button>
-              );
-            })}
+            {ASSETS.map((a) => (
+              <AssetButton
+                key={a}
+                asset={a}
+                score={states[a].result?.score}
+                selected={selected === a}
+                onSelect={handleSelect}
+              />
+            ))}
           </div>
           <button
-            onClick={() => setTick((t) => t + 1)}
+            onClick={handleRefresh}
             className="rounded-md border border-border bg-secondary/40 p-1 text-muted-foreground hover:text-foreground"
             aria-label="refresh"
           >

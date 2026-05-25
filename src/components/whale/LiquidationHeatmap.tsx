@@ -15,7 +15,7 @@ export function LiquidationHeatmap() {
   const [range, setRange] = useState<LiqRange>("4H");
 
   const fetcher = useMemo(() => (s: AbortSignal) => fetchLiqHeatmap({ symbol, range }, s), [symbol, range]);
-  const { data, error, loading, retry } = useAsync(fetcher, [symbol, range], { refreshMs: 120_000 });
+  const { data, error, loading, retry } = useAsync(fetcher, [symbol, range], { refreshMs: 30_000 });
 
   const cascadeScore = data
     ? Math.min(98, Math.round((data.longTotal + data.shortTotal) / (data.totalOI || 1) * 220))
@@ -32,7 +32,7 @@ export function LiquidationHeatmap() {
   return (
     <Panel
       title="Liquidation Heatmap"
-      subtitle={`${symbol} perp · multi-exchange OI density · ${range}`}
+      subtitle={`${symbol} · live Hyperliquid liq prices + Binance order book · ${range}`}
       accent="orange"
     >
       <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-[10px]">

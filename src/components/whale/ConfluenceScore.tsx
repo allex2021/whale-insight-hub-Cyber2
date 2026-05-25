@@ -229,6 +229,37 @@ const AssetButton = memo(function AssetButton({ asset, score, selected, onSelect
   );
 });
 
+// Live countdown — isolated so it doesn't re-render the whole panel every second
+const REFRESH_INTERVAL_MS = 30_000;
+function LiveRefreshIndicator({ lastUpdate }: { lastUpdate: number | null }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  if (!lastUpdate) {
+    return <span className="font-mono text-[10px] text-muted-foreground">loading…</span>;
+  }
+  const elapsed = Math.max(0, Math.floor((now - lastUpdate) / 1000));
+  const nextIn = Math.max(0, Math.ceil((REFRESH_INTERVAL_MS - (now - lastUpdate)) / 1000));
+  return (
+    <span className="hidden sm:inline font-mono text-[10px] text-muted-foreground">
+      updated {elapsed}s ago · next in {nextIn}s
+    </span>
+  );
+}
+        "flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px] font-bold transition-colors",
+        selected ? "bg-[var(--neon-purple)]/30 text-foreground" : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {asset}
+      {score !== undefined && (
+        <span className="font-mono" style={{ color: gaugeColor(score) }}>{score}</span>
+      )}
+    </button>
+  );
+});
+
 export function ConfluenceScore() {
   const [states, setStates] = useState<Record<Asset, AssetState>>({
     BTC: { asset: "BTC", loading: true },

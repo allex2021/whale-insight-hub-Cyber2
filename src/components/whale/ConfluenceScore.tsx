@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Panel, Chip } from "./Panel";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronDown, ChevronUp, RefreshCw, AlertTriangle } from "lucide-react";

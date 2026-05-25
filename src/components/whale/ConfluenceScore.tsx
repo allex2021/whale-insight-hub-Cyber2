@@ -331,7 +331,6 @@ export function ConfluenceScore() {
       subtitle="Multi-signal aggregate · updates every 30s"
       accent="purple"
       action={
-        <>
         <div className="flex items-center gap-2">
           <LiveRefreshIndicator lastUpdate={lastUpdate} />
           <div className="flex gap-1 rounded-md border border-border bg-secondary/40 p-0.5">
@@ -352,7 +351,7 @@ export function ConfluenceScore() {
           >
             <RefreshCw className="h-3 w-3" />
           </button>
-        </>
+        </div>
       }
     >
       {current.error && !current.result && (

@@ -229,6 +229,26 @@ const AssetButton = memo(function AssetButton({ asset, score, selected, onSelect
   );
 });
 
+// Live countdown — isolated so it doesn't re-render the whole panel every second
+const REFRESH_INTERVAL_MS = 30_000;
+function LiveRefreshIndicator({ lastUpdate }: { lastUpdate: number | null }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  if (!lastUpdate) {
+    return <span className="font-mono text-[10px] text-muted-foreground">loading…</span>;
+  }
+  const elapsed = Math.max(0, Math.floor((now - lastUpdate) / 1000));
+  const nextIn = Math.max(0, Math.ceil((REFRESH_INTERVAL_MS - (now - lastUpdate)) / 1000));
+  return (
+    <span className="hidden sm:inline font-mono text-[10px] text-muted-foreground">
+      updated {elapsed}s ago · next in {nextIn}s
+    </span>
+  );
+}
+
 export function ConfluenceScore() {
   const [states, setStates] = useState<Record<Asset, AssetState>>({
     BTC: { asset: "BTC", loading: true },
@@ -311,7 +331,8 @@ export function ConfluenceScore() {
       subtitle="Multi-signal aggregate · updates every 30s"
       accent="purple"
       action={
-        <>
+        <div className="flex items-center gap-2">
+          <LiveRefreshIndicator lastUpdate={lastUpdate} />
           <div className="flex gap-1 rounded-md border border-border bg-secondary/40 p-0.5">
             {ASSETS.map((a) => (
               <AssetButton
@@ -330,7 +351,7 @@ export function ConfluenceScore() {
           >
             <RefreshCw className="h-3 w-3" />
           </button>
-        </>
+        </div>
       }
     >
       {current.error && !current.result && (

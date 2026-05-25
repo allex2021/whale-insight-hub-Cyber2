@@ -1,8 +1,10 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Panel, Chip } from "./Panel";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronDown, ChevronUp, RefreshCw, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, RefreshCw, AlertTriangle, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fetchEconomicCalendar, getUpcomingHighImpact, type UpcomingEvent } from "@/lib/whale/economicCalendar";
 
 type Asset = "BTC" | "ETH" | "SOL";
 const ASSETS: Asset[] = ["BTC", "ETH", "SOL"];

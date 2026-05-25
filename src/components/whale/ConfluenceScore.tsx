@@ -98,31 +98,71 @@ function calculateConfluenceScore(input: RawInputs): ConfluenceResult {
   return { score, label, confidence, tone, signals };
 }
 
-async function fetchAssetInputs(asset: Asset): Promise<RawInputs> {
+// ----- Module-level caches (survive re-renders, avoid duplicate work) -----
+let fgCache: { at: number; value: number } | null = null;
+async function fetchFearGreed(): Promise<number> {
+  if (fgCache && Date.now() - fgCache.at < 5 * 60_000) return fgCache.value;
+  try {
+    const j = await fetch("https://api.alternative.me/fng/?limit=1").then((r) => r.json());
+    const v = j?.data?.[0] ? parseInt(j.data[0].value, 10) : 50;
+    fgCache = { at: Date.now(), value: v };
+    return v;
+  } catch {
+    return fgCache?.value ?? 50;
+  }
+}
+
+let whaleCountsCache: { at: number; counts: Record<Asset, { buy: number; sell: number }> } | null = null;
+async function fetchWhaleCounts(): Promise<Record<Asset, { buy: number; sell: number }>> {
+  if (whaleCountsCache && Date.now() - whaleCountsCache.at < 60_000) return whaleCountsCache.counts;
+  const empty: Record<Asset, { buy: number; sell: number }> = {
+    BTC: { buy: 0, sell: 0 }, ETH: { buy: 0, sell: 0 }, SOL: { buy: 0, sell: 0 },
+  };
+  try {
+    const { data, error } = await supabase
+      .from("whale_trades")
+      .select("asset, side")
+      .in("asset", ASSETS)
+      .gte("trade_time", new Date(Date.now() - 6 * 3600 * 1000).toISOString());
+    if (error || !data) return whaleCountsCache?.counts ?? empty;
+    const out = empty;
+    for (const row of data as Array<{ asset: Asset; side: string }>) {
+      if (!out[row.asset]) continue;
+      if (row.side === "BUY") out[row.asset].buy++;
+      else if (row.side === "SELL") out[row.asset].sell++;
+    }
+    whaleCountsCache = { at: Date.now(), counts: out };
+    return out;
+  } catch {
+    return whaleCountsCache?.counts ?? empty;
+  }
+}
+
+const assetInputCache = new Map<Asset, { at: number; inputs: RawInputs }>();
+async function fetchAssetInputs(
+  asset: Asset,
+  shared: { fgIndex: number; whaleCounts: { buy: number; sell: number } },
+): Promise<RawInputs> {
+  const cached = assetInputCache.get(asset);
+  if (cached && Date.now() - cached.at < 20_000) return cached.inputs;
+
   const sym = `${asset}USDT`;
-  const [funding, lsRes, depthRes, oiCur, oiPrev, fg, whales] = await Promise.allSettled([
+  const [funding, lsRes, depthRes, oiCur, oiPrev] = await Promise.allSettled([
     fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${sym}`).then((r) => r.json()),
     fetch(`https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${sym}&period=1h&limit=1`).then((r) => r.json()),
     fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${sym}&limit=20`).then((r) => r.json()),
     fetch(`https://fapi.binance.com/futures/data/openInterestHist?symbol=${sym}&period=5m&limit=1`).then((r) => r.json()),
     fetch(`https://fapi.binance.com/futures/data/openInterestHist?symbol=${sym}&period=5m&limit=13`).then((r) => r.json()),
-    fetch(`https://api.alternative.me/fng/?limit=1`).then((r) => r.json()),
-    supabase
-      .from("whale_trades")
-      .select("side")
-      .eq("asset", asset)
-      .gte("trade_time", new Date(Date.now() - 6 * 3600 * 1000).toISOString()),
   ]);
 
   const fundingRate = funding.status === "fulfilled" ? parseFloat(funding.value.lastFundingRate || "0") : 0;
   const lsArr = lsRes.status === "fulfilled" ? lsRes.value : [];
   const longShortRatio = Array.isArray(lsArr) && lsArr[0] ? parseFloat(lsArr[0].longShortRatio || "1") : 1;
 
-  // Order book imbalance — sum top 20 bid vs ask qty
   let obImb = 0;
   if (depthRes.status === "fulfilled" && depthRes.value?.bids) {
-    const bidSum = (depthRes.value.bids as [string, string][]).reduce((s, [_, q]) => s + parseFloat(q), 0);
-    const askSum = (depthRes.value.asks as [string, string][]).reduce((s, [_, q]) => s + parseFloat(q), 0);
+    const bidSum = (depthRes.value.bids as [string, string][]).reduce((s, [, q]) => s + parseFloat(q), 0);
+    const askSum = (depthRes.value.asks as [string, string][]).reduce((s, [, q]) => s + parseFloat(q), 0);
     if (bidSum + askSum > 0) obImb = (bidSum - askSum) / (bidSum + askSum);
   }
 
@@ -134,31 +174,25 @@ async function fetchAssetInputs(asset: Asset): Promise<RawInputs> {
     if (prev > 0) oiChange = ((cur - prev) / prev) * 100;
   }
 
-  const fgIndex = fg.status === "fulfilled" && fg.value?.data?.[0] ? parseInt(fg.value.data[0].value, 10) : 50;
-
-  let buyCount = 0, sellCount = 0;
-  if (whales.status === "fulfilled" && Array.isArray(whales.value.data)) {
-    for (const w of whales.value.data) {
-      if (w.side === "BUY") buyCount++;
-      else if (w.side === "SELL") sellCount++;
-    }
-  }
+  const { buy: buyCount, sell: sellCount } = shared.whaleCounts;
   const tot = buyCount + sellCount;
   const whaleBias: RawInputs["whaleBias"] =
     tot < 5 ? "neutral" :
     buyCount > sellCount * 1.3 ? "long" :
     sellCount > buyCount * 1.3 ? "short" : "neutral";
 
-  return {
+  const inputs: RawInputs = {
     fundingRate,
     longShortRatio,
     orderBookImbalance: obImb,
-    fearGreedIndex: fgIndex,
+    fearGreedIndex: shared.fgIndex,
     openInterestChange1h: oiChange,
     whaleBias,
     whaleBuyCount: buyCount,
     whaleSellCount: sellCount,
   };
+  assetInputCache.set(asset, { at: Date.now(), inputs });
+  return inputs;
 }
 
 interface AssetState {
@@ -176,6 +210,25 @@ function gaugeColor(score: number): string {
   return "var(--bear)";
 }
 
+// Memoized asset selector — re-renders only when score for that asset changes
+interface AssetButtonProps { asset: Asset; score?: number; selected: boolean; onSelect: (a: Asset) => void }
+const AssetButton = memo(function AssetButton({ asset, score, selected, onSelect }: AssetButtonProps) {
+  return (
+    <button
+      onClick={() => onSelect(asset)}
+      className={cn(
+        "flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px] font-bold transition-colors",
+        selected ? "bg-[var(--neon-purple)]/30 text-foreground" : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {asset}
+      {score !== undefined && (
+        <span className="font-mono" style={{ color: gaugeColor(score) }}>{score}</span>
+      )}
+    </button>
+  );
+});
+
 export function ConfluenceScore() {
   const [states, setStates] = useState<Record<Asset, AssetState>>({
     BTC: { asset: "BTC", loading: true },
@@ -186,35 +239,57 @@ export function ConfluenceScore() {
   const [expanded, setExpanded] = useState(false);
   const [tick, setTick] = useState(0);
   const [lastUpdate, setLastUpdate] = useState<number | null>(null);
+  const inflightRef = useRef(false);
 
   useEffect(() => {
+    if (inflightRef.current) return;
+    inflightRef.current = true;
     let cancelled = false;
     (async () => {
-      const results = await Promise.all(
-        ASSETS.map(async (a) => {
-          try {
-            const inputs = await fetchAssetInputs(a);
-            return { asset: a, result: calculateConfluenceScore(inputs) };
-          } catch (e) {
-            return { asset: a, error: e instanceof Error ? e.message : String(e) };
+      try {
+        // Shared inputs fetched ONCE per cycle (was 3x duplicate)
+        const [fgIndex, whaleCounts] = await Promise.all([fetchFearGreed(), fetchWhaleCounts()]);
+        const results = await Promise.all(
+          ASSETS.map(async (a) => {
+            try {
+              const inputs = await fetchAssetInputs(a, { fgIndex, whaleCounts: whaleCounts[a] });
+              return { asset: a, result: calculateConfluenceScore(inputs) };
+            } catch (e) {
+              return { asset: a, error: e instanceof Error ? e.message : String(e) };
+            }
+          }),
+        );
+        if (cancelled) return;
+        setStates((prev) => {
+          let changed = false;
+          const next = { ...prev };
+          for (const r of results) {
+            const old = prev[r.asset];
+            if (old.result?.score !== r.result?.score || old.error !== r.error || old.loading) {
+              next[r.asset] = { asset: r.asset, loading: false, result: r.result, error: r.error };
+              changed = true;
+            }
           }
-        }),
-      );
-      if (cancelled) return;
-      const next: Record<Asset, AssetState> = { ...states };
-      for (const r of results) {
-        next[r.asset] = { asset: r.asset, loading: false, result: r.result, error: r.error };
+          return changed ? next : prev;
+        });
+        setLastUpdate(Date.now());
+      } finally {
+        inflightRef.current = false;
       }
-      setStates(next);
-      setLastUpdate(Date.now());
     })();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick]);
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 30_000);
     return () => clearInterval(id);
+  }, []);
+
+  const handleSelect = useCallback((a: Asset) => setSelected(a), []);
+  const handleRefresh = useCallback(() => {
+    // Force-bypass caches on manual refresh
+    assetInputCache.clear();
+    setTick((t) => t + 1);
   }, []);
 
   const current = states[selected];

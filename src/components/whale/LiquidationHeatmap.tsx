@@ -17,9 +17,20 @@ export function LiquidationHeatmap() {
   const fetcher = useMemo(() => (s: AbortSignal) => fetchLiqHeatmap({ symbol, range }, s), [symbol, range]);
   const { data, error, loading, retry } = useAsync(fetcher, [symbol, range], { refreshMs: 30_000 });
 
-  const cascadeScore = data
+  const nearbyCluster = data
+    ? data.topClusters
+        .filter((c) => Math.abs(c.distancePct) <= 3)
+        .reduce((max, c) => Math.max(max, c.usd), 0)
+    : 0;
+  const baseScore = data
     ? Math.min(98, Math.round((data.longTotal + data.shortTotal) / (data.totalOI || 1) * 220))
     : 0;
+  // Force-elevate when a large magnet sits within 3% of spot
+  const clusterBoost =
+    nearbyCluster >= 2_000_000_000 ? 90 :
+    nearbyCluster >= 1_000_000_000 ? 80 :
+    nearbyCluster >= 500_000_000   ? 65 : 0;
+  const cascadeScore = Math.min(98, Math.max(baseScore, clusterBoost));
   const cascadeLabel = cascadeScore > 80 ? "CRITICAL" : cascadeScore > 60 ? "HIGH" : cascadeScore > 30 ? "MEDIUM" : "LOW";
   const cascadeTone = cascadeScore > 80 ? "bear" : cascadeScore > 60 ? "warn" : cascadeScore > 30 ? "default" : "bull";
 

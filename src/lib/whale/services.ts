@@ -155,7 +155,7 @@ async function fetchHLPositions(symbol: Symbol, signal?: AbortSignal): Promise<H
     const top = lb.leaderboardRows
       .filter((r) => parseFloat(r.accountValue) > 250_000)
       .sort((a, b) => dayVlm(b) - dayVlm(a))
-      .slice(0, 50);
+      .slice(0, 25);
 
     const states = await Promise.all(
       top.map(async (r) => {

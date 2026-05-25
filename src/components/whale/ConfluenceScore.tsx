@@ -261,7 +261,42 @@ export function ConfluenceScore() {
   const [expanded, setExpanded] = useState(false);
   const [tick, setTick] = useState(0);
   const [lastUpdate, setLastUpdate] = useState<number | null>(null);
+  const [upcoming, setUpcoming] = useState<UpcomingEvent[]>([]);
+  const notifiedRef = useRef<Map<string, Set<number>>>(new Map());
   const inflightRef = useRef(false);
+
+  // ---- Economic calendar: pre-event caution (60min window, alerts at 60 & 15 min) ----
+  useEffect(() => {
+    let cancelled = false;
+    const ctrl = new AbortController();
+    const tick = async () => {
+      try {
+        const events = await fetchEconomicCalendar(ctrl.signal);
+        const list = getUpcomingHighImpact(events, 60);
+        if (cancelled) return;
+        setUpcoming(list);
+        // Fire one-shot pre-event alerts at 60min and 15min thresholds
+        const thresholds = [60, 15];
+        for (const ev of list) {
+          const key = `${ev.country}|${ev.title}|${ev.at}`;
+          const seen = notifiedRef.current.get(key) ?? new Set<number>();
+          for (const t of thresholds) {
+            if (ev.minutesUntil <= t && !seen.has(t)) {
+              seen.add(t);
+              toast.warning(`⚠️ ${ev.country} ${ev.title}`, {
+                description: `High-impact macro event in ~${ev.minutesUntil} min · expect volatility`,
+                duration: 8000,
+              });
+            }
+          }
+          notifiedRef.current.set(key, seen);
+        }
+      } catch { /* swallow — non-critical */ }
+    };
+    tick();
+    const id = setInterval(tick, 60_000); // re-evaluate countdowns every minute
+    return () => { cancelled = true; ctrl.abort(); clearInterval(id); };
+  }, []);
 
   useEffect(() => {
     if (inflightRef.current) return;

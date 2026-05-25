@@ -248,17 +248,6 @@ function LiveRefreshIndicator({ lastUpdate }: { lastUpdate: number | null }) {
     </span>
   );
 }
-        "flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px] font-bold transition-colors",
-        selected ? "bg-[var(--neon-purple)]/30 text-foreground" : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {asset}
-      {score !== undefined && (
-        <span className="font-mono" style={{ color: gaugeColor(score) }}>{score}</span>
-      )}
-    </button>
-  );
-});
 
 export function ConfluenceScore() {
   const [states, setStates] = useState<Record<Asset, AssetState>>({

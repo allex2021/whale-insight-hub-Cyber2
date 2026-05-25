@@ -1,8 +1,10 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Panel, Chip } from "./Panel";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronDown, ChevronUp, RefreshCw, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, RefreshCw, AlertTriangle, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fetchEconomicCalendar, getUpcomingHighImpact, type UpcomingEvent } from "@/lib/whale/economicCalendar";
 
 type Asset = "BTC" | "ETH" | "SOL";
 const ASSETS: Asset[] = ["BTC", "ETH", "SOL"];
@@ -259,7 +261,42 @@ export function ConfluenceScore() {
   const [expanded, setExpanded] = useState(false);
   const [tick, setTick] = useState(0);
   const [lastUpdate, setLastUpdate] = useState<number | null>(null);
+  const [upcoming, setUpcoming] = useState<UpcomingEvent[]>([]);
+  const notifiedRef = useRef<Map<string, Set<number>>>(new Map());
   const inflightRef = useRef(false);
+
+  // ---- Economic calendar: pre-event caution (60min window, alerts at 60 & 15 min) ----
+  useEffect(() => {
+    let cancelled = false;
+    const ctrl = new AbortController();
+    const tick = async () => {
+      try {
+        const events = await fetchEconomicCalendar(ctrl.signal);
+        const list = getUpcomingHighImpact(events, 60);
+        if (cancelled) return;
+        setUpcoming(list);
+        // Fire one-shot pre-event alerts at 60min and 15min thresholds
+        const thresholds = [60, 15];
+        for (const ev of list) {
+          const key = `${ev.country}|${ev.title}|${ev.at}`;
+          const seen = notifiedRef.current.get(key) ?? new Set<number>();
+          for (const t of thresholds) {
+            if (ev.minutesUntil <= t && !seen.has(t)) {
+              seen.add(t);
+              toast.warning(`⚠️ ${ev.country} ${ev.title}`, {
+                description: `High-impact macro event in ~${ev.minutesUntil} min · expect volatility`,
+                duration: 8000,
+              });
+            }
+          }
+          notifiedRef.current.set(key, seen);
+        }
+      } catch { /* swallow — non-critical */ }
+    };
+    tick();
+    const id = setInterval(tick, 60_000); // re-evaluate countdowns every minute
+    return () => { cancelled = true; ctrl.abort(); clearInterval(id); };
+  }, []);
 
   useEffect(() => {
     if (inflightRef.current) return;
@@ -354,6 +391,26 @@ export function ConfluenceScore() {
         </div>
       }
     >
+      {upcoming.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-[var(--neon-orange)]/50 bg-[var(--neon-orange)]/10 px-3 py-2 text-xs">
+          <CalendarClock className="h-4 w-4 text-[var(--neon-orange)] shrink-0" />
+          <span className="font-bold uppercase tracking-wider text-[var(--neon-orange)]">Caution</span>
+          <span className="text-muted-foreground">High-impact macro event{upcoming.length > 1 ? "s" : ""} within 1h:</span>
+          <div className="flex flex-wrap gap-1.5">
+            {upcoming.slice(0, 3).map((ev) => (
+              <span
+                key={`${ev.country}-${ev.title}-${ev.at}`}
+                className="inline-flex items-center gap-1 rounded border border-[var(--neon-orange)]/40 bg-background/40 px-1.5 py-0.5 font-mono"
+                title={new Date(ev.at).toLocaleString()}
+              >
+                <span className="font-bold text-[var(--neon-orange)]">{ev.country}</span>
+                <span className="text-foreground">{ev.title}</span>
+                <span className="text-muted-foreground">· {ev.minutesUntil}m</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       {current.error && !current.result && (
         <div className="flex items-center gap-2 rounded-md border border-bear/40 bg-bear/10 p-3 text-xs text-bear">
           <AlertTriangle className="h-4 w-4" /> {current.error}

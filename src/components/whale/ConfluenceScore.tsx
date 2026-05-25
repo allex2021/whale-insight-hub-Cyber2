@@ -332,6 +332,8 @@ export function ConfluenceScore() {
       accent="purple"
       action={
         <>
+        <div className="flex items-center gap-2">
+          <LiveRefreshIndicator lastUpdate={lastUpdate} />
           <div className="flex gap-1 rounded-md border border-border bg-secondary/40 p-0.5">
             {ASSETS.map((a) => (
               <AssetButton

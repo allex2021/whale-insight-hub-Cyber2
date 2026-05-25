@@ -32,7 +32,7 @@ export function LiquidationHeatmap() {
   return (
     <Panel
       title="Liquidation Heatmap"
-      subtitle={`${symbol} perp · multi-exchange OI density · ${range}`}
+      subtitle={`${symbol} · live Hyperliquid liq prices + Binance order book · ${range}`}
       accent="orange"
     >
       <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-[10px]">

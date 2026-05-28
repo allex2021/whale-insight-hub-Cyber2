@@ -37,6 +37,15 @@ export function NewsAI() {
     return { score: total ? Math.round((weighted / total) * 100) : 0, bull, bear, neutral };
   }, [items]);
 
+  // VADER sentiment index — independent NLP signal across all headlines
+  const vaderIndex = useMemo(() => {
+    if (!items || items.length === 0) return { avg: 0, count: 0 };
+    const valid = items.filter((i) => i.sentiment);
+    if (valid.length === 0) return { avg: 0, count: 0 };
+    const sum = valid.reduce((s, i) => s + (i.sentiment?.compound ?? 0), 0);
+    return { avg: sum / valid.length, count: valid.length };
+  }, [items]);
+
   const breaking = items?.find((i) => (i.ai?.score ?? 0) >= 9 && i.ai?.impact === "HIGH");
 
   const filtered = useMemo(() => {

@@ -64,10 +64,18 @@ export function OnChainPanel() {
     staleTime: 45_000,
   });
 
+  const fpFn = useServerFn(fetchBtcFeesPools);
+  const { data: fp } = useQuery({
+    queryKey: ["btc-fees-pools"],
+    queryFn: () => fpFn(),
+    refetchInterval: 60_000,
+    staleTime: 45_000,
+  });
+
   return (
     <Panel
       title="On-Chain Layer"
-      subtitle="BTC network · DeFi TVL · DEX volume (DefiLlama + Blockchain.com)"
+      subtitle="BTC network + fees + pools · DeFi TVL · DEX (DefiLlama + blockchain.com + mempool.space)"
       accent="purple"
     >
       {isLoading && !data && <LoadingState label="Fetching on-chain data…" />}

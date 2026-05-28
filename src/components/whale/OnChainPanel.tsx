@@ -56,10 +56,18 @@ export function OnChainPanel() {
     staleTime: 90_000,
   });
 
+  const btcFn = useServerFn(fetchBtcNetwork);
+  const { data: btc } = useQuery({
+    queryKey: ["btc-network"],
+    queryFn: () => btcFn(),
+    refetchInterval: 60_000,
+    staleTime: 45_000,
+  });
+
   return (
     <Panel
       title="On-Chain Layer"
-      subtitle="DeFi TVL · DEX volume · top chains (via DefiLlama)"
+      subtitle="BTC network · DeFi TVL · DEX volume (DefiLlama + Blockchain.com)"
       accent="purple"
     >
       {isLoading && !data && <LoadingState label="Fetching on-chain data…" />}

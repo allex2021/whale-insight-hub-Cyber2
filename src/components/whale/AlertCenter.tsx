@@ -150,6 +150,27 @@ export function AlertCenter() {
         </div>
       }
     >
+      {showPrefs && (
+        <div className="mb-3 rounded-md border border-border bg-secondary/40 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Alert Types
+            </span>
+            <div className="flex gap-2 text-[10px]">
+              <button onClick={() => setAll(true)} className="rounded border border-border px-2 py-0.5 hover:border-border-bright">All on</button>
+              <button onClick={() => setAll(false)} className="rounded border border-border px-2 py-0.5 hover:border-border-bright">All off</button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {ALERT_TYPES.map((t) => (
+              <label key={t} className="flex cursor-pointer items-center justify-between gap-2 rounded border border-border bg-background/40 px-2 py-1.5 text-[11px]">
+                <span className="font-mono">{t}</span>
+                <Switch checked={prefs[t]} onCheckedChange={() => toggle(t)} />
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
       {loading && !dbAlerts && liveAlerts.length === 0 && <LoadingState />}
       {error && <ErrorState error={error} onRetry={() => setTick((t) => t + 1)} />}
       {(dbAlerts || liveAlerts.length > 0) && (

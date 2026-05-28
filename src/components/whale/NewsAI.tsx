@@ -172,6 +172,19 @@ export function NewsAI() {
                         <Chip tone={a.verdict === "BULLISH" ? "bull" : a.verdict === "BEARISH" ? "bear" : "default"}>
                           <Icon className="h-3 w-3" /> {a.verdict} · {a.score}/10
                         </Chip>
+                        {n.sentiment && (
+                          <span
+                            className={cn(
+                              "rounded border px-1.5 py-0.5 text-[9px] font-mono",
+                              n.sentiment.label === "BULLISH" ? "border-bull/50 bg-bull/10 text-bull" :
+                              n.sentiment.label === "BEARISH" ? "border-bear/50 bg-bear/10 text-bear" :
+                              "border-border bg-secondary/40 text-muted-foreground",
+                            )}
+                            title="VADER NLP sentiment compound score"
+                          >
+                            VADER {n.sentiment.compound > 0 ? "+" : ""}{n.sentiment.compound.toFixed(2)}
+                          </span>
+                        )}
                         {a.confidence !== undefined && (
                           <span className="rounded border border-border px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
                             conf {a.confidence}%

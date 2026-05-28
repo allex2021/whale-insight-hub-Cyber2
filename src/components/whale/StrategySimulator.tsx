@@ -142,7 +142,7 @@ export function StrategySimulator() {
       {/* Results */}
       <div className="mt-4">
         {m.isPending && <LoadingState label="Simulating…" />}
-        {m.isError && <ErrorState label={m.error?.message ?? "Backtest failed"} />}
+        {m.isError && <ErrorState error={m.error?.message ?? "Backtest failed"} onRetry={() => m.mutate()} />}
         {result && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

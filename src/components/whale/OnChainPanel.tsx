@@ -74,6 +74,62 @@ export function OnChainPanel() {
       {error && !data && <ErrorState error={String(error)} onRetry={() => refetch()} />}
       {data && (
         <div className="space-y-4">
+          {/* BTC Network (Blockchain.com) */}
+          {btc && (
+            <div className="rounded border border-border/60 bg-card/40 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  <Cpu className="h-3 w-3" /> BTC Network
+                </div>
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  via blockchain.com
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div>
+                  <div className="text-[9px] uppercase text-muted-foreground">Hashrate</div>
+                  <div className="font-mono text-sm font-bold text-foreground">
+                    {btc.hashRateEhs.toFixed(1)} EH/s
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] uppercase text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-2.5 w-2.5" /> Block Time
+                  </div>
+                  <div className="font-mono text-sm font-bold text-foreground">
+                    {btc.minutesBetweenBlocks.toFixed(1)}m
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] uppercase text-muted-foreground">Mempool</div>
+                  <div className="font-mono text-sm font-bold text-foreground">
+                    {btc.unconfirmedTx.toLocaleString()}
+                    <span className="ml-1 text-[9px] text-muted-foreground">tx</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[9px] uppercase text-muted-foreground flex items-center gap-1">
+                    <Pickaxe className="h-2.5 w-2.5" /> Miner Rev 24h
+                  </div>
+                  <div className="font-mono text-sm font-bold text-foreground">
+                    {fmtUsd(btc.minersRevenueUsd)}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-2 border-t border-border/40 pt-2 text-[10px]">
+                <div className="text-muted-foreground">
+                  Blocks 24h: <span className="font-mono text-foreground">{btc.blocksMined24h}</span>
+                </div>
+                <div className="text-muted-foreground">
+                  Fees: <span className="font-mono text-foreground">{btc.totalFeesBtc.toFixed(2)} BTC</span>
+                </div>
+                <div className="text-muted-foreground">
+                  TX/s: <span className="font-mono text-foreground">{btc.txRate.toFixed(1)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Top metrics */}
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded border border-border/60 bg-card/50 p-3">

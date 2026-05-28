@@ -122,6 +122,16 @@ export function AlertCenter() {
       action={
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setShowPrefs((s) => !s)}
+            title="Toggle alert types"
+            className={cn(
+              "flex items-center gap-1 rounded-md border bg-secondary px-2 py-1 text-[11px] hover:border-border-bright",
+              showPrefs ? "border-[var(--neon-orange)]/60 text-[var(--neon-orange)]" : "border-border"
+            )}
+          >
+            <SlidersHorizontal className="h-3 w-3" /> Types
+          </button>
+          <button
             onClick={toggleMuted}
             title={muted ? "Unmute beep" : "Mute beep"}
             className="flex items-center gap-1 rounded-md border border-border bg-secondary px-2 py-1 text-[11px] hover:border-border-bright"

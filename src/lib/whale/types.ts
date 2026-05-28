@@ -46,6 +46,10 @@ export interface NewsItem {
     assets?: string[];
     aiPowered?: boolean;
   };
+  sentiment?: {
+    compound: number; // -1..+1 VADER
+    label: "BULLISH" | "BEARISH" | "NEUTRAL";
+  };
 }
 
 

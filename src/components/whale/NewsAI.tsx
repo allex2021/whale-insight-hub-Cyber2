@@ -37,6 +37,15 @@ export function NewsAI() {
     return { score: total ? Math.round((weighted / total) * 100) : 0, bull, bear, neutral };
   }, [items]);
 
+  // VADER sentiment index — independent NLP signal across all headlines
+  const vaderIndex = useMemo(() => {
+    if (!items || items.length === 0) return { avg: 0, count: 0 };
+    const valid = items.filter((i) => i.sentiment);
+    if (valid.length === 0) return { avg: 0, count: 0 };
+    const sum = valid.reduce((s, i) => s + (i.sentiment?.compound ?? 0), 0);
+    return { avg: sum / valid.length, count: valid.length };
+  }, [items]);
+
   const breaking = items?.find((i) => (i.ai?.score ?? 0) >= 9 && i.ai?.impact === "HIGH");
 
   const filtered = useMemo(() => {
@@ -114,6 +123,20 @@ export function NewsAI() {
                 style={{ width: `${Math.min(50, Math.abs(mood.score) / 2)}%` }}
               />
             </div>
+            {vaderIndex.count > 0 && (
+              <div className="mt-2 flex items-center justify-between text-[10px]">
+                <span className="uppercase tracking-widest text-muted-foreground">VADER NLP Index</span>
+                <span className="font-mono">
+                  <span className={cn(
+                    "font-bold",
+                    vaderIndex.avg > 0.1 ? "text-bull" : vaderIndex.avg < -0.1 ? "text-bear" : "text-muted-foreground",
+                  )}>
+                    {vaderIndex.avg > 0 ? "+" : ""}{vaderIndex.avg.toFixed(3)}
+                  </span>
+                  <span className="text-muted-foreground"> · {vaderIndex.count} items</span>
+                </span>
+              </div>
+            )}
           </div>
 
           {breaking && (
@@ -149,6 +172,19 @@ export function NewsAI() {
                         <Chip tone={a.verdict === "BULLISH" ? "bull" : a.verdict === "BEARISH" ? "bear" : "default"}>
                           <Icon className="h-3 w-3" /> {a.verdict} · {a.score}/10
                         </Chip>
+                        {n.sentiment && (
+                          <span
+                            className={cn(
+                              "rounded border px-1.5 py-0.5 text-[9px] font-mono",
+                              n.sentiment.label === "BULLISH" ? "border-bull/50 bg-bull/10 text-bull" :
+                              n.sentiment.label === "BEARISH" ? "border-bear/50 bg-bear/10 text-bear" :
+                              "border-border bg-secondary/40 text-muted-foreground",
+                            )}
+                            title="VADER NLP sentiment compound score"
+                          >
+                            VADER {n.sentiment.compound > 0 ? "+" : ""}{n.sentiment.compound.toFixed(2)}
+                          </span>
+                        )}
                         {a.confidence !== undefined && (
                           <span className="rounded border border-border px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
                             conf {a.confidence}%

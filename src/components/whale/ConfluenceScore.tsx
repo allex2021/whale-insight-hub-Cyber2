@@ -1,10 +1,12 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import { Panel, Chip } from "./Panel";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronDown, ChevronUp, RefreshCw, AlertTriangle, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchEconomicCalendar, getUpcomingHighImpact, type UpcomingEvent } from "@/lib/whale/economicCalendar";
+import { fetchNewsServer } from "@/lib/whale/market.functions";
 
 type Asset = "BTC" | "ETH" | "SOL";
 const ASSETS: Asset[] = ["BTC", "ETH", "SOL"];
@@ -27,6 +29,8 @@ interface RawInputs {
   whaleBias: "long" | "short" | "neutral";
   whaleBuyCount: number;
   whaleSellCount: number;
+  newsSentiment: number;        // -1..+1 (VADER avg)
+  newsCount: number;
 }
 
 function calculateConfluenceScore(input: RawInputs): ConfluenceResult {
@@ -87,6 +91,17 @@ function calculateConfluenceScore(input: RawInputs): ConfluenceResult {
     weight: obW,
   });
 
+  // 7. News sentiment (VADER, weight ±10)
+  const nsW = input.newsCount >= 3 ? Math.round(input.newsSentiment * 10) : 0;
+  score += nsW;
+  signals.push({
+    name: "News Sentiment",
+    value: input.newsCount >= 3
+      ? `${input.newsSentiment > 0 ? "+" : ""}${input.newsSentiment.toFixed(2)} · ${input.newsCount} items`
+      : `insufficient (${input.newsCount})`,
+    weight: nsW,
+  });
+
   score = Math.max(0, Math.min(100, Math.round(score)));
   const label =
     score >= 76 ? "STRONGLY BULLISH" :
@@ -143,7 +158,12 @@ async function fetchWhaleCounts(): Promise<Record<Asset, { buy: number; sell: nu
 const assetInputCache = new Map<Asset, { at: number; inputs: RawInputs }>();
 async function fetchAssetInputs(
   asset: Asset,
-  shared: { fgIndex: number; whaleCounts: { buy: number; sell: number } },
+  shared: {
+    fgIndex: number;
+    whaleCounts: { buy: number; sell: number };
+    newsSentiment: number;
+    newsCount: number;
+  },
 ): Promise<RawInputs> {
   const cached = assetInputCache.get(asset);
   if (cached && Date.now() - cached.at < 20_000) return cached.inputs;
@@ -192,6 +212,8 @@ async function fetchAssetInputs(
     whaleBias,
     whaleBuyCount: buyCount,
     whaleSellCount: sellCount,
+    newsSentiment: shared.newsSentiment,
+    newsCount: shared.newsCount,
   };
   assetInputCache.set(asset, { at: Date.now(), inputs });
   return inputs;
@@ -298,6 +320,8 @@ export function ConfluenceScore() {
     return () => { cancelled = true; ctrl.abort(); clearInterval(id); };
   }, []);
 
+  const fetchNews = useServerFn(fetchNewsServer);
+
   useEffect(() => {
     if (inflightRef.current) return;
     inflightRef.current = true;
@@ -305,11 +329,18 @@ export function ConfluenceScore() {
     (async () => {
       try {
         // Shared inputs fetched ONCE per cycle (was 3x duplicate)
-        const [fgIndex, whaleCounts] = await Promise.all([fetchFearGreed(), fetchWhaleCounts()]);
+        const [fgIndex, whaleCounts, news] = await Promise.all([
+          fetchFearGreed(),
+          fetchWhaleCounts(),
+          fetchNews().catch(() => []),
+        ]);
+        const sentiments = news.map((n) => n.sentiment?.compound).filter((c): c is number => typeof c === "number");
+        const newsSentiment = sentiments.length ? sentiments.reduce((s, x) => s + x, 0) / sentiments.length : 0;
+        const newsCount = sentiments.length;
         const results = await Promise.all(
           ASSETS.map(async (a) => {
             try {
-              const inputs = await fetchAssetInputs(a, { fgIndex, whaleCounts: whaleCounts[a] });
+              const inputs = await fetchAssetInputs(a, { fgIndex, whaleCounts: whaleCounts[a], newsSentiment, newsCount });
               return { asset: a, result: calculateConfluenceScore(inputs) };
             } catch (e) {
               return { asset: a, error: e instanceof Error ? e.message : String(e) };
@@ -488,7 +519,7 @@ export function ConfluenceScore() {
 
             {lastUpdate && (
               <div className="text-[10px] text-muted-foreground">
-                Updated {new Date(lastUpdate).toLocaleTimeString()} · funding · L/S · order book · F&G · OI · whale flow
+                Updated {new Date(lastUpdate).toLocaleTimeString()} · funding · L/S · order book · F&G · OI · whale flow · news (VADER)
               </div>
             )}
           </div>

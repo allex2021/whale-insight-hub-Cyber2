@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 // Below-the-fold panels: code-split + mount on scroll
 const OrderBookWalls = lazy(() => import("@/components/whale/OrderBookWalls").then(m => ({ default: m.OrderBookWalls })));
 const OnChainPanel = lazy(() => import("@/components/whale/OnChainPanel").then(m => ({ default: m.OnChainPanel })));
+const MultiTimeframeTA = lazy(() => import("@/components/whale/MultiTimeframeTA").then(m => ({ default: m.MultiTimeframeTA })));
 const CVDPanel = lazy(() => import("@/components/whale/CVDPanel").then(m => ({ default: m.CVDPanel })));
 const OpenInterestTracker = lazy(() => import("@/components/whale/OpenInterestTracker").then(m => ({ default: m.OpenInterestTracker })));
 const SupportResistance = lazy(() => import("@/components/whale/SupportResistance").then(m => ({ default: m.SupportResistance })));

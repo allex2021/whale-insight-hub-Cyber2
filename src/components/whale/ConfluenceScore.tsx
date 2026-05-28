@@ -156,7 +156,12 @@ async function fetchWhaleCounts(): Promise<Record<Asset, { buy: number; sell: nu
 const assetInputCache = new Map<Asset, { at: number; inputs: RawInputs }>();
 async function fetchAssetInputs(
   asset: Asset,
-  shared: { fgIndex: number; whaleCounts: { buy: number; sell: number } },
+  shared: {
+    fgIndex: number;
+    whaleCounts: { buy: number; sell: number };
+    newsSentiment: number;
+    newsCount: number;
+  },
 ): Promise<RawInputs> {
   const cached = assetInputCache.get(asset);
   if (cached && Date.now() - cached.at < 20_000) return cached.inputs;
@@ -205,6 +210,8 @@ async function fetchAssetInputs(
     whaleBias,
     whaleBuyCount: buyCount,
     whaleSellCount: sellCount,
+    newsSentiment: shared.newsSentiment,
+    newsCount: shared.newsCount,
   };
   assetInputCache.set(asset, { at: Date.now(), inputs });
   return inputs;

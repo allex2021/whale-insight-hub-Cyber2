@@ -37,6 +37,8 @@ export function AlertCenter() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
+  const [showPrefs, setShowPrefs] = useState(false);
+  const { prefs, toggle, isEnabled, setAll } = useAlertPrefs();
 
   const { trades } = useBinanceWhaleStream(WHALE_THRESHOLD, 50);
   const { playPump, playDump, muted, toggleMuted } = useWhaleAlertSound();

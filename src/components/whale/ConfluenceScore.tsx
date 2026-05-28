@@ -27,6 +27,8 @@ interface RawInputs {
   whaleBias: "long" | "short" | "neutral";
   whaleBuyCount: number;
   whaleSellCount: number;
+  newsSentiment: number;        // -1..+1 (VADER avg)
+  newsCount: number;
 }
 
 function calculateConfluenceScore(input: RawInputs): ConfluenceResult {

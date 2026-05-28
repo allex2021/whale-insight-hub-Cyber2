@@ -36,6 +36,7 @@ const AITradingSignals = lazy(() => import("@/components/whale/AITradingSignals"
 const AlertCenter = lazy(() => import("@/components/whale/AlertCenter").then(m => ({ default: m.AlertCenter })));
 const DeribitOptionsPanel = lazy(() => import("@/components/whale/DeribitOptionsPanel").then(m => ({ default: m.DeribitOptionsPanel })));
 const CustomAlertBuilder = lazy(() => import("@/components/whale/CustomAlertBuilder").then(m => ({ default: m.CustomAlertBuilder })));
+const StrategySimulator = lazy(() => import("@/components/whale/StrategySimulator").then(m => ({ default: m.StrategySimulator })));
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -135,6 +136,7 @@ function Dashboard() {
 
           <TabsContent value="ai" className="space-y-4 mt-4">
             <LazyMount minHeight={400}><AITradingSignals /></LazyMount>
+            <LazyMount minHeight={520}><StrategySimulator /></LazyMount>
             <LazyMount minHeight={400}><NewsAI /></LazyMount>
             <LazyMount minHeight={360}><CrossExchangeSignal /></LazyMount>
           </TabsContent>

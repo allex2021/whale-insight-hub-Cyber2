@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, Trash2, Settings as SettingsIcon, Volume2, VolumeX } from "lucide-react";
+import { Bell, Trash2, Settings as SettingsIcon, Volume2, VolumeX, SlidersHorizontal } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Panel } from "./Panel";
 import { timeAgo } from "@/lib/whale/format";
@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { ErrorState, LoadingState } from "./StateView";
 import { useBinanceWhaleStream } from "@/hooks/useBinanceWhaleStream";
 import { useWhaleAlertSound } from "@/hooks/useWhaleAlertSound";
+import { useAlertPrefs, ALERT_TYPES } from "@/hooks/useAlertPrefs";
+import { Switch } from "@/components/ui/switch";
 
 interface AlertRow {
   id: string;
@@ -35,6 +37,8 @@ export function AlertCenter() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
+  const [showPrefs, setShowPrefs] = useState(false);
+  const { prefs, toggle, isEnabled, setAll } = useAlertPrefs();
 
   const { trades } = useBinanceWhaleStream(WHALE_THRESHOLD, 50);
   const { playPump, playDump, muted, toggleMuted } = useWhaleAlertSound();
@@ -71,6 +75,7 @@ export function AlertCenter() {
   // Bridge Binance stream → live whale alerts + beep on BUY/SELL
   useEffect(() => {
     if (trades.length === 0) return;
+    if (!isEnabled("WHALE")) return;
     const fresh: AlertRow[] = [];
     let pumpOnce = false;
     let dumpOnce = false;
@@ -102,9 +107,10 @@ export function AlertCenter() {
   const merged = useMemo(() => {
     const all = [...liveAlerts, ...(dbAlerts ?? [])];
     return all
+      .filter((a) => isEnabled(a.alert_type))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 80);
-  }, [liveAlerts, dbAlerts]);
+  }, [liveAlerts, dbAlerts, isEnabled]);
 
   const clearAll = () => { setDbAlerts([]); setLiveAlerts([]); };
 
@@ -115,6 +121,16 @@ export function AlertCenter() {
       accent="orange"
       action={
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowPrefs((s) => !s)}
+            title="Toggle alert types"
+            className={cn(
+              "flex items-center gap-1 rounded-md border bg-secondary px-2 py-1 text-[11px] hover:border-border-bright",
+              showPrefs ? "border-[var(--neon-orange)]/60 text-[var(--neon-orange)]" : "border-border"
+            )}
+          >
+            <SlidersHorizontal className="h-3 w-3" /> Types
+          </button>
           <button
             onClick={toggleMuted}
             title={muted ? "Unmute beep" : "Mute beep"}
@@ -134,6 +150,27 @@ export function AlertCenter() {
         </div>
       }
     >
+      {showPrefs && (
+        <div className="mb-3 rounded-md border border-border bg-secondary/40 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Alert Types
+            </span>
+            <div className="flex gap-2 text-[10px]">
+              <button onClick={() => setAll(true)} className="rounded border border-border px-2 py-0.5 hover:border-border-bright">All on</button>
+              <button onClick={() => setAll(false)} className="rounded border border-border px-2 py-0.5 hover:border-border-bright">All off</button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {ALERT_TYPES.map((t) => (
+              <label key={t} className="flex cursor-pointer items-center justify-between gap-2 rounded border border-border bg-background/40 px-2 py-1.5 text-[11px]">
+                <span className="font-mono">{t}</span>
+                <Switch checked={prefs[t]} onCheckedChange={() => toggle(t)} />
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
       {loading && !dbAlerts && liveAlerts.length === 0 && <LoadingState />}
       {error && <ErrorState error={error} onRetry={() => setTick((t) => t + 1)} />}
       {(dbAlerts || liveAlerts.length > 0) && (

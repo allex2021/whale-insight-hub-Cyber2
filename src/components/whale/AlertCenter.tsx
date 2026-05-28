@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, Trash2, Settings as SettingsIcon, Volume2, VolumeX } from "lucide-react";
+import { Bell, Trash2, Settings as SettingsIcon, Volume2, VolumeX, SlidersHorizontal } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Panel } from "./Panel";
 import { timeAgo } from "@/lib/whale/format";
@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { ErrorState, LoadingState } from "./StateView";
 import { useBinanceWhaleStream } from "@/hooks/useBinanceWhaleStream";
 import { useWhaleAlertSound } from "@/hooks/useWhaleAlertSound";
+import { useAlertPrefs, ALERT_TYPES } from "@/hooks/useAlertPrefs";
+import { Switch } from "@/components/ui/switch";
 
 interface AlertRow {
   id: string;

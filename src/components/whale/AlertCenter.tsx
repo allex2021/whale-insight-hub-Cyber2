@@ -107,9 +107,10 @@ export function AlertCenter() {
   const merged = useMemo(() => {
     const all = [...liveAlerts, ...(dbAlerts ?? [])];
     return all
+      .filter((a) => isEnabled(a.alert_type))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 80);
-  }, [liveAlerts, dbAlerts]);
+  }, [liveAlerts, dbAlerts, isEnabled]);
 
   const clearAll = () => { setDbAlerts([]); setLiveAlerts([]); };
 

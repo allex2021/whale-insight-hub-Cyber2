@@ -75,6 +75,7 @@ export function AlertCenter() {
   // Bridge Binance stream → live whale alerts + beep on BUY/SELL
   useEffect(() => {
     if (trades.length === 0) return;
+    if (!isEnabled("WHALE")) return;
     const fresh: AlertRow[] = [];
     let pumpOnce = false;
     let dumpOnce = false;

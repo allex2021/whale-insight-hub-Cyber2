@@ -4,7 +4,7 @@ import { Activity, TrendingDown, TrendingUp, Layers, Cpu, Clock, Pickaxe } from 
 import { Panel } from "./Panel";
 import { LoadingState, ErrorState } from "./StateView";
 import { cn } from "@/lib/utils";
-import { fetchBtcNetwork } from "@/lib/whale/onchain.functions";
+import { fetchBtcNetwork, fetchBtcFeesPools } from "@/lib/whale/onchain.functions";
 
 type Chain = { name: string; tvl: number; tokenSymbol: string | null };
 type DexProtocol = { name: string; total24h: number; change_1d: number; chains: string[] };
@@ -64,10 +64,18 @@ export function OnChainPanel() {
     staleTime: 45_000,
   });
 
+  const fpFn = useServerFn(fetchBtcFeesPools);
+  const { data: fp } = useQuery({
+    queryKey: ["btc-fees-pools"],
+    queryFn: () => fpFn(),
+    refetchInterval: 60_000,
+    staleTime: 45_000,
+  });
+
   return (
     <Panel
       title="On-Chain Layer"
-      subtitle="BTC network · DeFi TVL · DEX volume (DefiLlama + Blockchain.com)"
+      subtitle="BTC network + fees + pools · DeFi TVL · DEX (DefiLlama + blockchain.com + mempool.space)"
       accent="purple"
     >
       {isLoading && !data && <LoadingState label="Fetching on-chain data…" />}
@@ -129,6 +137,66 @@ export function OnChainPanel() {
               </div>
             </div>
           )}
+
+          {/* BTC Fees + Mining Pools (mempool.space) */}
+          {fp && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="rounded border border-border/60 bg-card/40 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    BTC Fees (sat/vB)
+                  </span>
+                  <span className="font-mono text-[9px] text-muted-foreground">mempool.space</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded bg-bear/10 px-2 py-1.5 text-center">
+                    <div className="text-[9px] uppercase text-bear">Fast</div>
+                    <div className="font-mono text-sm font-bold text-foreground">{fp.fees.fastest}</div>
+                  </div>
+                  <div className="rounded bg-warn/10 px-2 py-1.5 text-center">
+                    <div className="text-[9px] uppercase text-warn">30m</div>
+                    <div className="font-mono text-sm font-bold text-foreground">{fp.fees.halfHour}</div>
+                  </div>
+                  <div className="rounded bg-bull/10 px-2 py-1.5 text-center">
+                    <div className="text-[9px] uppercase text-bull">1h</div>
+                    <div className="font-mono text-sm font-bold text-foreground">{fp.fees.hour}</div>
+                  </div>
+                </div>
+                <div className="mt-1.5 flex justify-between text-[9px] text-muted-foreground">
+                  <span>Econ: <span className="font-mono text-foreground">{fp.fees.economy}</span></span>
+                  <span>Min: <span className="font-mono text-foreground">{fp.fees.minimum}</span></span>
+                </div>
+              </div>
+              <div className="rounded border border-border/60 bg-card/40 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Top Mining Pools (24h)
+                  </span>
+                  <span className="font-mono text-[9px] text-muted-foreground">{fp.totalBlocks24h} blks</span>
+                </div>
+                <div className="space-y-1">
+                  {fp.pools.slice(0, 5).map((p) => (
+                    <div key={p.name} className="flex items-center gap-2">
+                      <span className="w-20 truncate font-mono text-[10px] font-semibold text-foreground">
+                        {p.name}
+                      </span>
+                      <div className="relative h-1.5 flex-1 overflow-hidden rounded bg-card">
+                        <div
+                          className="absolute inset-y-0 left-0 bg-[var(--neon-purple)]/60"
+                          style={{ width: `${Math.min(p.share * 100, 100)}%` }}
+                        />
+                      </div>
+                      <span className="w-10 text-right font-mono text-[10px] text-muted-foreground">
+                        {(p.share * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+
 
           {/* Top metrics */}
           <div className="grid grid-cols-2 gap-3">

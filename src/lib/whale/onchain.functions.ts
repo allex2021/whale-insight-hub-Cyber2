@@ -97,3 +97,84 @@ export const fetchBtcNetwork = createServerFn({ method: "GET" }).handler(
     }
   },
 );
+
+/**
+ * mempool.space free API: recommended fees + top mining pools (24h share).
+ */
+
+export type MempoolFees = {
+  fastest: number; // sat/vB
+  halfHour: number;
+  hour: number;
+  economy: number;
+  minimum: number;
+};
+
+export type MiningPool = {
+  name: string;
+  blockCount: number;
+  share: number; // 0..1
+};
+
+export type BtcFeesPools = {
+  fetchedAt: number;
+  fees: MempoolFees;
+  pools: MiningPool[];
+  totalBlocks24h: number;
+};
+
+let fpCache: { at: number; data: BtcFeesPools } | null = null;
+
+type RawFees = {
+  fastestFee: number;
+  halfHourFee: number;
+  hourFee: number;
+  economyFee: number;
+  minimumFee: number;
+};
+type RawPools = {
+  pools: Array<{ name: string; blockCount: number }>;
+  blockCount: number;
+};
+
+export const fetchBtcFeesPools = createServerFn({ method: "GET" }).handler(
+  async (): Promise<BtcFeesPools> => {
+    if (fpCache && Date.now() - fpCache.at < 60_000) return fpCache.data;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const [feesR, poolsR] = await Promise.all([
+        fetch("https://mempool.space/api/v1/fees/recommended", { signal: ctrl.signal }),
+        fetch("https://mempool.space/api/v1/mining/pools/24h", { signal: ctrl.signal }),
+      ]);
+      if (!feesR.ok) throw new Error(`fees ${feesR.status}`);
+      if (!poolsR.ok) throw new Error(`pools ${poolsR.status}`);
+      const f = (await feesR.json()) as RawFees;
+      const p = (await poolsR.json()) as RawPools;
+      const total = Number(p.blockCount) || p.pools.reduce((s, x) => s + (x.blockCount || 0), 0);
+      const pools: MiningPool[] = (p.pools || [])
+        .slice(0, 6)
+        .map((x) => ({
+          name: x.name,
+          blockCount: Number(x.blockCount) || 0,
+          share: total > 0 ? (Number(x.blockCount) || 0) / total : 0,
+        }));
+      const data: BtcFeesPools = {
+        fetchedAt: Date.now(),
+        fees: {
+          fastest: Number(f.fastestFee) || 0,
+          halfHour: Number(f.halfHourFee) || 0,
+          hour: Number(f.hourFee) || 0,
+          economy: Number(f.economyFee) || 0,
+          minimum: Number(f.minimumFee) || 0,
+        },
+        pools,
+        totalBlocks24h: total,
+      };
+      fpCache = { at: Date.now(), data };
+      return data;
+    } finally {
+      clearTimeout(t);
+    }
+  },
+);

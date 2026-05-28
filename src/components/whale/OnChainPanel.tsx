@@ -4,7 +4,7 @@ import { Activity, TrendingDown, TrendingUp, Layers, Cpu, Clock, Pickaxe } from 
 import { Panel } from "./Panel";
 import { LoadingState, ErrorState } from "./StateView";
 import { cn } from "@/lib/utils";
-import { fetchBtcNetwork } from "@/lib/whale/onchain.functions";
+import { fetchBtcNetwork, fetchBtcFeesPools } from "@/lib/whale/onchain.functions";
 
 type Chain = { name: string; tvl: number; tokenSymbol: string | null };
 type DexProtocol = { name: string; total24h: number; change_1d: number; chains: string[] };

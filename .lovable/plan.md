@@ -1,92 +1,78 @@
-# Whale Intelligence Pro — Audit
+## Goal
 
-## ✅ Ja ache (full implemented)
+Phase 1 integrations — JS-equivalent stack যোগ করে existing panels upgrade:
+1. **CCXT** → 108+ exchange unified API (cross-exchange data expand)
+2. **VADER sentiment** → news article-এ NLP score, ConfluenceScore-এ weight যোগ
 
-**Panels (24 ta):**
-- Whale Tracker (Hyperliquid + Smart Money Score) ✅
-- Liquidation Heatmap ✅
-- Options Flow (Put/Call) ✅
-- News & AI Analysis (CryptoPanic + Gemini) ✅
-- Smart Money Scoreboard ✅
-- Cross-Exchange Signals ✅
-- Inter-Market Correlation (DXY/SPX/Gold vs BTC) ✅
-- Funding Rate Monitor ✅
-- AI Trading Signals ✅
-- Whale vs Retail Divergence ✅
-- Alert Center (configurable thresholds) ✅
-- Long/Short Ratio ✅
-- Support/Resistance ✅
-- Order Book Walls ✅
-- CVD Panel ✅
-- Open Interest Tracker ✅
-- Liquidation Feed (live) ✅
-- Macro Bar ✅
-- Stablecoin Supply ✅
-- Symbol Filter + Sound Settings ✅
+দুটোই pure JS, edge-runtime safe, কোনো extra secret লাগবে না।
 
-**Data sources connected:**
-- Binance (REST + WebSocket) ✅
-- Bybit (`api.bybit.com/v5`) ✅
-- Hyperliquid ✅
-- CoinGecko ✅
-- Alternative.me (Fear & Greed) ✅
-- CryptoPanic (News) ✅
-- Lovable AI Gateway / Gemini (AI analysis) ✅ — *tomar list e "OpenRouter" likha, kintu amra Gemini direct use korchi, eta superior — same kaaj, faster, no extra API key*
+## Implementation
 
-## ❌ Ja nei / weak / improve kora dorkar
+### 1. Dependencies install
+```
+bun add ccxt vader-sentiment
+```
 
-### Data sources missing
-1. **OKX** — 3rd biggest exchange, currently absent. Cross-exchange signal aro strong hobe.
-2. **Deribit** — Options flow ekhon Bybit-based; Deribit is the actual options leader (>80% BTC options volume). Real institutional flow ekhane.
-3. **Coinglass / Coinalyze** — Aggregated liquidation + funding cross-exchange (paid tier ache, free tier limited).
-4. **Glassnode / CryptoQuant free tier** — On-chain metrics: exchange netflow, miner reserves, SOPR, MVRV. Currently zero on-chain data.
-5. **Whale Alert API** — Large on-chain transfers (BTC/ETH/USDT >$1M). Free tier ache.
-6. **Etherscan / Arkham** — Specific wallet tracking, ENS resolution.
-7. **DefiLlama** — TVL, DEX volumes, stablecoin breakdown by chain.
-8. **Velo Data / Laevitas** — Pro options analytics (Greeks, skew, term structure).
+### 2. New file: `src/lib/whale/ccxt.functions.ts`
+TanStack server function (`createServerFn`)। CCXT server-side চলবে (edge runtime-এ ccxt-এর pro REST mode কাজ করে)।
 
-### Feature gaps
-1. **On-chain layer** — Pure derivatives focused ekhon. Add: Exchange Inflow/Outflow, Miner reserves, Stablecoin chain distribution.
-2. **Spot vs Perp basis** — Funding er sathe spot-perp premium dekhale arbitrage signal.
-3. **OI-weighted Funding** — Single funding rate misleading; multi-exchange OI-weighted average dorkar.
-4. **Liquidation cascade simulator** — Ekhon heatmap show kore, kintu "if BTC dumps 3%, $XB liquidated" type forward simulation nei.
-5. **Whale wallet watchlist** — User-saved Hyperliquid traders. Notification when they open/close.
-6. **Trade journal / position tracker** — Alert click kore entry note rakha.
-7. **Custom alert builder** — Ekhon preset threshold; user-defined ("BTC funding > 0.08%", "ETH OI > $10B").
-8. **Telegram / Discord webhook** — Mobile push notification.
-9. **Multi-timeframe S/R** — 15m / 1h / 4h / 1d toggle.
-10. **Volume Profile / VWAP bands** — Intraday levels.
-11. **Order Flow imbalance** — Aggregated trade imbalance over rolling window.
-12. **Backtester** — Signal historical accuracy check.
-13. **PWA / mobile install** — Standalone app from home screen.
-14. **Theme toggle** — Light mode option.
-15. **Auth gated favorites / saved configs** — Supabase already ache, but user preferences server-side save hocche na.
+Exposes:
+- `getMultiExchangeTickers({ symbol })` — Binance, Bybit, OKX, Kraken, Coinbase, MEXC, Gate, KuCoin থেকে last price + 24h volume + change%
+- `getAggregatedFunding({ symbol })` — perpetual funding rate aggregate (Binance, Bybit, OKX, MEXC, Gate)
+- `getAggregatedOI({ symbol })` — open interest sum across exchanges
 
-### Technical / performance gaps
-1. **Shared WebSocket multiplex** — Ekhon ~10 alada Binance WS connection. `wss://stream.binance.com:9443/stream?streams=...` use korle 1 connection enough.
-2. **Tab visibility pause** — Background tab e bandwidth/battery drain.
-3. **Service worker / offline cache** — First load er pore static asset cache.
-4. **Error boundary per panel** — Ekhon 1 panel crash hole pura page jhamela kore na, but explicit boundary nai.
+Each call wrapped in try/catch per exchange — একটা fail হলেও বাকিগুলো return হবে।
 
-## 🎯 Priority recommendation (impact-wise sort)
+### 3. Update: `src/components/whale/CrossExchangeSignal.tsx`
+- Existing 4-exchange data-র পাশে নতুন "Extended exchanges" section
+- CCXT data fetch করে 8 exchange-এর price spread + volume share দেখাবে
+- Convergence indicator (≥6 exchanges agree direction = STRONG signal)
 
-**Tier 1 — Real edge:**
-1. Deribit options integration (institutional flow proper)
-2. OKX add to cross-exchange (3-exchange convergence stronger)
-3. On-chain layer (Whale Alert + DefiLlama) — totally missing dimension
-4. Shared WebSocket multiplex (load speed massive win)
+### 4. New file: `src/lib/whale/sentiment.ts`
+Pure client-safe helper:
+```ts
+import vader from 'vader-sentiment';
+export function scoreText(text: string): { compound: number; label: 'BULLISH'|'BEARISH'|'NEUTRAL' }
+```
+Compound score >0.2 → BULLISH, <-0.2 → BEARISH, else NEUTRAL.
 
-**Tier 2 — UX killer:**
-5. Custom alert builder + Telegram webhook
-6. Whale wallet watchlist (Hyperliquid traders save)
-7. Multi-timeframe S/R
+### 5. Update: `src/lib/whale/services.ts` (news fetcher)
+- প্রতিটা news item-এর `title + description`-এ VADER চালাবে
+- Result attach করবে `item.sentiment = { compound, label }`
+- Gemini AI call rate-limited fallback হিসেবে rakhbo (heavy items only)
 
-**Tier 3 — Nice to have:**
-8. PWA install
-9. Theme toggle
-10. Backtester
-11. Trade journal
+### 6. Update: `src/components/whale/NewsAI.tsx`
+- Per-article-এ VADER score badge (color-coded)
+- Aggregate "News Sentiment Index" header — last 20 article-এর average compound
 
----
+### 7. Update: `src/components/whale/ConfluenceScore.tsx`
+- New factor: `newsSentiment` (weight 10%)
+- Pull average compound from cached news; map to ±score
+- Display in factor breakdown row
 
-Bolo konta age korbo — ami suggest korbo **Tier 1 er #4 (WebSocket multiplex) + #3 (on-chain layer Whale Alert + DefiLlama)** age korte, karon onek high impact r free APIs.
+## Files affected
+
+**Create:**
+- `src/lib/whale/ccxt.functions.ts`
+- `src/lib/whale/sentiment.ts`
+
+**Edit:**
+- `src/components/whale/CrossExchangeSignal.tsx`
+- `src/lib/whale/services.ts`
+- `src/components/whale/NewsAI.tsx`
+- `src/components/whale/ConfluenceScore.tsx`
+- `package.json` (via bun add)
+
+## Risks / notes
+
+- **CCXT bundle size** — ~2MB; only server-side import (server function), client-এ যাবে না। Safe.
+- **Rate limits** — CCXT-এর default; per-exchange request টা parallel + 5s cache layer যোগ করব।
+- **Edge runtime** — CCXT-এর কিছু exchange WebSocket mode Worker-এ চলে না; আমরা শুধু REST methods (`fetchTicker`, `fetchFundingRate`, `fetchOpenInterest`) use করব — সব safe।
+- **VADER** — English text only; CryptoPanic mostly English, fine.
+
+## Verification
+
+- Build pass check
+- `/` route load করে CrossExchangeSignal-এ 8 exchange visible
+- NewsAI-তে sentiment badge দৃশ্যমান
+- ConfluenceScore breakdown-এ new "News Sentiment" row

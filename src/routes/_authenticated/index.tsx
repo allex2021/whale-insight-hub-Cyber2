@@ -38,6 +38,7 @@ const DeribitOptionsPanel = lazy(() => import("@/components/whale/DeribitOptions
 const CustomAlertBuilder = lazy(() => import("@/components/whale/CustomAlertBuilder").then(m => ({ default: m.CustomAlertBuilder })));
 const StrategySimulator = lazy(() => import("@/components/whale/StrategySimulator").then(m => ({ default: m.StrategySimulator })));
 const AIAssistant = lazy(() => import("@/components/whale/AIAssistant").then(m => ({ default: m.AIAssistant })));
+const ExecutionEngine = lazy(() => import("@/components/whale/ExecutionEngine").then(m => ({ default: m.ExecutionEngine })));
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -139,6 +140,7 @@ function Dashboard() {
             <LazyMount minHeight={620}><AIAssistant /></LazyMount>
             <LazyMount minHeight={400}><AITradingSignals /></LazyMount>
             <LazyMount minHeight={520}><StrategySimulator /></LazyMount>
+            <LazyMount minHeight={620}><ExecutionEngine /></LazyMount>
             <LazyMount minHeight={400}><NewsAI /></LazyMount>
             <LazyMount minHeight={360}><CrossExchangeSignal /></LazyMount>
           </TabsContent>

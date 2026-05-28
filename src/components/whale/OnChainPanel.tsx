@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Activity, TrendingDown, TrendingUp, Layers } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Activity, TrendingDown, TrendingUp, Layers, Cpu, Clock, Pickaxe } from "lucide-react";
 import { Panel } from "./Panel";
 import { LoadingState, ErrorState } from "./StateView";
 import { cn } from "@/lib/utils";
+import { fetchBtcNetwork } from "@/lib/whale/onchain.functions";
 
 type Chain = { name: string; tvl: number; tokenSymbol: string | null };
 type DexProtocol = { name: string; total24h: number; change_1d: number; chains: string[] };

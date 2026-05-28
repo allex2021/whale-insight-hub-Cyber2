@@ -115,6 +115,7 @@ function Dashboard() {
             <LazyMount minHeight={280}><CVDPanel /></LazyMount>
             <LazyMount minHeight={320}><OrderBookWalls /></LazyMount>
             <LazyMount minHeight={400}><OnChainPanel /></LazyMount>
+            <LazyMount minHeight={400}><MultiTimeframeTA /></LazyMount>
           </TabsContent>
 
           <TabsContent value="derivs" className="space-y-4 mt-4">

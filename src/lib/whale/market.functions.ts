@@ -247,6 +247,9 @@ export const fetchNewsServer = createServerFn({ method: "GET" }).handler(async (
             aiPowered: true,
           }
         : heuristicAnalyze(p);
+      // VADER sentiment on every item (cheap, runs even without AI)
+      const text = `${p.TITLE ?? ""}. ${(p.BODY ?? "").slice(0, 240)}`.trim();
+      const s = scoreText(text);
       return {
         id,
         source: p.SOURCE_DATA?.NAME ?? "CoinDesk",
@@ -254,6 +257,7 @@ export const fetchNewsServer = createServerFn({ method: "GET" }).handler(async (
         url: p.URL ?? "#",
         publishedAt: (p.PUBLISHED_ON ?? Math.floor(Date.now() / 1000)) * 1000,
         ai,
+        sentiment: { compound: s.compound, label: s.label },
       };
     });
     newsCache = { at: Date.now(), data };

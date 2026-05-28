@@ -519,7 +519,7 @@ export function ConfluenceScore() {
 
             {lastUpdate && (
               <div className="text-[10px] text-muted-foreground">
-                Updated {new Date(lastUpdate).toLocaleTimeString()} · funding · L/S · order book · F&G · OI · whale flow
+                Updated {new Date(lastUpdate).toLocaleTimeString()} · funding · L/S · order book · F&G · OI · whale flow · news (VADER)
               </div>
             )}
           </div>

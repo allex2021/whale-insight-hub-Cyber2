@@ -89,6 +89,17 @@ function calculateConfluenceScore(input: RawInputs): ConfluenceResult {
     weight: obW,
   });
 
+  // 7. News sentiment (VADER, weight ±10)
+  const nsW = input.newsCount >= 3 ? Math.round(input.newsSentiment * 10) : 0;
+  score += nsW;
+  signals.push({
+    name: "News Sentiment",
+    value: input.newsCount >= 3
+      ? `${input.newsSentiment > 0 ? "+" : ""}${input.newsSentiment.toFixed(2)} · ${input.newsCount} items`
+      : `insufficient (${input.newsCount})`,
+    weight: nsW,
+  });
+
   score = Math.max(0, Math.min(100, Math.round(score)));
   const label =
     score >= 76 ? "STRONGLY BULLISH" :

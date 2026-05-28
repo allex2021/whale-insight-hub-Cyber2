@@ -320,6 +320,8 @@ export function ConfluenceScore() {
     return () => { cancelled = true; ctrl.abort(); clearInterval(id); };
   }, []);
 
+  const fetchNews = useServerFn(fetchNewsServer);
+
   useEffect(() => {
     if (inflightRef.current) return;
     inflightRef.current = true;
@@ -327,11 +329,18 @@ export function ConfluenceScore() {
     (async () => {
       try {
         // Shared inputs fetched ONCE per cycle (was 3x duplicate)
-        const [fgIndex, whaleCounts] = await Promise.all([fetchFearGreed(), fetchWhaleCounts()]);
+        const [fgIndex, whaleCounts, news] = await Promise.all([
+          fetchFearGreed(),
+          fetchWhaleCounts(),
+          fetchNews().catch(() => []),
+        ]);
+        const sentiments = news.map((n) => n.sentiment?.compound).filter((c): c is number => typeof c === "number");
+        const newsSentiment = sentiments.length ? sentiments.reduce((s, x) => s + x, 0) / sentiments.length : 0;
+        const newsCount = sentiments.length;
         const results = await Promise.all(
           ASSETS.map(async (a) => {
             try {
-              const inputs = await fetchAssetInputs(a, { fgIndex, whaleCounts: whaleCounts[a] });
+              const inputs = await fetchAssetInputs(a, { fgIndex, whaleCounts: whaleCounts[a], newsSentiment, newsCount });
               return { asset: a, result: calculateConfluenceScore(inputs) };
             } catch (e) {
               return { asset: a, error: e instanceof Error ? e.message : String(e) };

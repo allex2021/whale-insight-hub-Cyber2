@@ -123,6 +123,20 @@ export function NewsAI() {
                 style={{ width: `${Math.min(50, Math.abs(mood.score) / 2)}%` }}
               />
             </div>
+            {vaderIndex.count > 0 && (
+              <div className="mt-2 flex items-center justify-between text-[10px]">
+                <span className="uppercase tracking-widest text-muted-foreground">VADER NLP Index</span>
+                <span className="font-mono">
+                  <span className={cn(
+                    "font-bold",
+                    vaderIndex.avg > 0.1 ? "text-bull" : vaderIndex.avg < -0.1 ? "text-bear" : "text-muted-foreground",
+                  )}>
+                    {vaderIndex.avg > 0 ? "+" : ""}{vaderIndex.avg.toFixed(3)}
+                  </span>
+                  <span className="text-muted-foreground"> · {vaderIndex.count} items</span>
+                </span>
+              </div>
+            )}
           </div>
 
           {breaking && (

@@ -44,11 +44,7 @@ export function MacroBar() {
   });
 
   if (!data) {
-    return (
-      <div className="flex items-center gap-2 rounded-xl border border-border bg-card/60 px-3 py-2 text-[11px] text-muted-foreground">
-        <Globe className="h-3.5 w-3.5 animate-pulse" /> Loading macro…
-      </div>
-    );
+    return <SkeletonLoader variant="ticker" />;
   }
 
   const positive = data.totalMcapChange24h >= 0;

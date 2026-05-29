@@ -5,7 +5,7 @@ import { Panel, Chip } from "./Panel";
 import { timeAgo } from "@/lib/whale/format";
 import { useAsync } from "@/lib/whale/useAsync";
 import { fetchNewsServer } from "@/lib/whale/market.functions";
-import { ErrorState, LoadingState } from "./StateView";
+import { ErrorState } from "./StateView";
 import { SkeletonLoader } from "./SkeletonLoader";
 import { useWhaleAlertSound } from "@/hooks/useWhaleAlertSound";
 import { cn } from "@/lib/utils";

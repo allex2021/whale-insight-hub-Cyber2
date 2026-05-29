@@ -196,7 +196,7 @@ export function WhaleActivityFeed() {
       }
     >
       {!mounted ? (
-        <EmptyState label="Loading whale feed…" />
+        <SkeletonLoader variant="list" rows={6} />
       ) : (
         <>
           <div className="mb-3 rounded-lg border border-border bg-gradient-to-br from-card to-secondary/40 p-3">

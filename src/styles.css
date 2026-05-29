@@ -126,6 +126,24 @@
   }
   .row-warn { background: color-mix(in oklab, var(--neon-orange) 12%, transparent); }
 
+  /* Dark shimmer skeleton loader */
+  .skeleton-shimmer {
+    background: linear-gradient(
+      105deg,
+      #1a1a2e 0%,
+      #1a1a2e 40%,
+      #2a2a4e 50%,
+      #1a1a2e 60%,
+      #1a1a2e 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.8s ease-in-out infinite;
+  }
+  @keyframes skeleton-shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+  }
+
   .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
   .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
 }

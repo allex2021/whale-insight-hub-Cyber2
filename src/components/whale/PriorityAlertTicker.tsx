@@ -54,6 +54,10 @@ export function PriorityAlertTicker() {
         ? "border-bear/40 bg-bear/5 text-bear"
         : "border-[var(--neon-yellow)]/40 bg-[var(--neon-yellow)]/5 text-[var(--neon-yellow)]";
 
+  if (!current.text) {
+    return <SkeletonLoader variant="ticker" />;
+  }
+
   return (
     <div
       className={cn(

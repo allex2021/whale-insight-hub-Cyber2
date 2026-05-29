@@ -33,7 +33,7 @@ export function PriorityAlertTicker() {
       }));
     if (top.length === 0) {
       return [
-        { id: "boot", tone: "warn", icon: "warn", text: "Awaiting whale flow from Binance stream…" },
+        { id: "boot", tone: "warn", icon: "warn", text: "" },
       ];
     }
     return top;

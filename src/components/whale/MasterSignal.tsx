@@ -292,7 +292,7 @@ export function MasterSignal() {
           <TriangleAlert className="h-4 w-4" /> {current.error}
         </div>
       )}
-      {current.loading && !sig && <div className="h-[180px] animate-pulse rounded-md bg-secondary/30" />}
+      {current.loading && !sig && <SkeletonLoader variant="hero" />}
       {sig && current.inputs && (
         <div className="space-y-4">
           {/* Hero row */}

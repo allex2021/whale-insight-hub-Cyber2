@@ -47,7 +47,7 @@ export function StablecoinSupply() {
       }
     >
       {isLoading || !data ? (
-        <div className="py-8 text-center text-xs text-muted-foreground">Loading stablecoin data…</div>
+        <SkeletonLoader variant="default" rows={5} />
       ) : (
         <>
           <div className="mb-3 flex items-baseline justify-between gap-3 border-b border-border pb-3">

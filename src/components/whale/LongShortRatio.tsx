@@ -81,10 +81,7 @@ export function LongShortRatio() {
       }
     >
       {isLoading && !data ? (
-        <div className="py-10 text-center text-sm text-muted-foreground">
-          <RefreshCw className="mx-auto h-5 w-5 animate-spin" />
-          <div className="mt-2">Loading ratios…</div>
-        </div>
+        <SkeletonLoader variant="cards" rows={selected.length || 4} />
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {data?.map((r) => {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Zap } from "lucide-react";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { useBinanceWhaleStream } from "@/hooks/useBinanceWhaleStream";
 import { fmtUSD } from "@/lib/whale/format";
 import { cn } from "@/lib/utils";

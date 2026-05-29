@@ -75,7 +75,7 @@ export function MultiTimeframeTA() {
               <span className="text-xs text-foreground">{fg.data.classification}</span>
             </div>
           ) : (
-            <div className="text-xs text-muted-foreground">loading…</div>
+            <SkeletonLoader variant="ticker" />
           )}
         </div>
         <div className="h-2 w-40 overflow-hidden rounded bg-card sm:w-56">

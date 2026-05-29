@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Panel, Chip } from "./Panel";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { generateMasterAISignal } from "@/lib/whale/masterSignal.functions";
@@ -291,7 +292,7 @@ export function MasterSignal() {
           <TriangleAlert className="h-4 w-4" /> {current.error}
         </div>
       )}
-      {current.loading && !sig && <div className="h-[180px] animate-pulse rounded-md bg-secondary/30" />}
+      {current.loading && !sig && <SkeletonLoader variant="hero" />}
       {sig && current.inputs && (
         <div className="space-y-4">
           {/* Hero row */}

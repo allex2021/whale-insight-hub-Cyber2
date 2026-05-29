@@ -1,10 +1,11 @@
-import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
+import { SkeletonLoader } from "./SkeletonLoader";
 
-export function LoadingState({ label = "Loading live data…" }: { label?: string }) {
+export function LoadingState({ variant = "default" as "default" | "table" | "gauge" | "hero" | "ticker" | "list", label }: { variant?: "default" | "table" | "gauge" | "hero" | "ticker" | "list"; label?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 py-10 text-xs text-muted-foreground">
-      <Loader2 className="h-5 w-5 animate-spin text-[var(--neon-blue)]" />
-      <span>{label}</span>
+    <div className="flex flex-col items-center justify-center gap-3 py-8 text-xs text-muted-foreground">
+      <SkeletonLoader variant={variant} />
+      {label && <span>{label}</span>}
     </div>
   );
 }

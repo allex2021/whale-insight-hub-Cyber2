@@ -3,7 +3,8 @@ import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 import { Panel, Chip } from "./Panel";
 import { useAsync } from "@/lib/whale/useAsync";
 import { fetchCorrelation } from "@/lib/whale/services";
-import { ErrorState, LoadingState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState } from "./StateView";
 
 export function InterMarketCorrelation() {
   const fetcher = useMemo(() => (s: AbortSignal) => fetchCorrelation(s), []);
@@ -11,7 +12,7 @@ export function InterMarketCorrelation() {
 
   return (
     <Panel title="Inter-Market Correlation" subtitle="BTC vs ETH · Gold · LINK · ETH/BTC (14d, Pearson)" accent="blue">
-      {loading && !data && <LoadingState label="Computing 14d correlations…" />}
+      {loading && !data && <SkeletonLoader variant="cards" rows={4} />}
       {error && !data && <ErrorState error={error} onRetry={retry} />}
       {data && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">

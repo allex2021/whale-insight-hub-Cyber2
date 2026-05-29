@@ -80,7 +80,7 @@ export function WhaleTracker() {
         </div>
       }
     >
-      {isLoading && !data && <LoadingState label="Fetching live whale positions from Hyperliquid…" />}
+      {isLoading && !data && <LoadingState variant="table" label="Fetching live whale positions from Hyperliquid…" />}
       {error && !data && <ErrorState error={String(error)} onRetry={() => refetch()} />}
       {data && filtered.length === 0 && <EmptyState label="No positions match the current filter." />}
 

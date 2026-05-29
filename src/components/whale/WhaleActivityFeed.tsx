@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDownRight, ArrowUpRight, Radio, Volume2, VolumeX } from "lucide-react";
 import { Panel } from "./Panel";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { EmptyState } from "./StateView";
 import { type WhaleTrade, type WhaleAsset } from "@/hooks/useBinanceWhaleStream";
 import { useMultiExchangeWhaleStream } from "@/hooks/useMultiExchangeWhaleStream";
@@ -196,7 +197,7 @@ export function WhaleActivityFeed() {
       }
     >
       {!mounted ? (
-        <EmptyState label="Loading whale feed…" />
+        <SkeletonLoader variant="list" rows={6} />
       ) : (
         <>
           <div className="mb-3 rounded-lg border border-border bg-gradient-to-br from-card to-secondary/40 p-3">

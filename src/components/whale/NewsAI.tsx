@@ -5,7 +5,8 @@ import { Panel, Chip } from "./Panel";
 import { timeAgo } from "@/lib/whale/format";
 import { useAsync } from "@/lib/whale/useAsync";
 import { fetchNewsServer } from "@/lib/whale/market.functions";
-import { ErrorState, LoadingState } from "./StateView";
+import { ErrorState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { useWhaleAlertSound } from "@/hooks/useWhaleAlertSound";
 import { cn } from "@/lib/utils";
 
@@ -98,7 +99,7 @@ export function NewsAI() {
         </div>
       }
     >
-      {loading && !items && <LoadingState label="Analyzing news with AI…" />}
+      {loading && !items && <SkeletonLoader variant="list" rows={6} />}
       {error && !items && <ErrorState error={error} onRetry={retry} />}
       {items && (
         <>

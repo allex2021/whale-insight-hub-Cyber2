@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Panel, Chip } from "./Panel";
-import { LoadingState, ErrorState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState } from "./StateView";
 import type { Symbol } from "@/lib/whale/types";
 import { runBacktest, type BacktestResult } from "@/lib/whale/strategy.functions";
 
@@ -141,7 +142,7 @@ export function StrategySimulator() {
 
       {/* Results */}
       <div className="mt-4">
-        {m.isPending && <LoadingState label="Simulating…" />}
+        {m.isPending && <SkeletonLoader variant="default" rows={4} />}
         {m.isError && <ErrorState error={m.error?.message ?? "Backtest failed"} onRetry={() => m.mutate()} />}
         {result && (
           <div className="space-y-3">

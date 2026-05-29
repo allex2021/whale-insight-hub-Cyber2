@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Panel, Chip } from "./Panel";
-import { LoadingState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
 import type { Symbol } from "@/lib/whale/types";
 import { fetchFearGreed, fetchMultiTfTA } from "@/lib/whale/ta.functions";
 
@@ -75,7 +75,7 @@ export function MultiTimeframeTA() {
               <span className="text-xs text-foreground">{fg.data.classification}</span>
             </div>
           ) : (
-            <div className="text-xs text-muted-foreground">loading…</div>
+            <SkeletonLoader variant="ticker" />
           )}
         </div>
         <div className="h-2 w-40 overflow-hidden rounded bg-card sm:w-56">
@@ -95,7 +95,7 @@ export function MultiTimeframeTA() {
       </div>
 
       {/* MTF table */}
-      {!ta.data && <LoadingState label="Computing indicators…" />}
+      {!ta.data && <SkeletonLoader variant="table" rows={4} />}
       {ta.data && (
         <>
           <div className="mb-2 flex items-center justify-between">

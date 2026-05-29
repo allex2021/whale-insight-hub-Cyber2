@@ -5,7 +5,8 @@ import { Panel } from "./Panel";
 import { timeAgo } from "@/lib/whale/format";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { ErrorState, LoadingState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState } from "./StateView";
 import { useBinanceWhaleStream } from "@/hooks/useBinanceWhaleStream";
 import { useWhaleAlertSound } from "@/hooks/useWhaleAlertSound";
 import { useAlertPrefs, ALERT_TYPES } from "@/hooks/useAlertPrefs";
@@ -171,7 +172,7 @@ export function AlertCenter() {
           </div>
         </div>
       )}
-      {loading && !dbAlerts && liveAlerts.length === 0 && <LoadingState />}
+      {loading && !dbAlerts && liveAlerts.length === 0 && <SkeletonLoader variant="list" rows={6} />}
       {error && <ErrorState error={error} onRetry={() => setTick((t) => t + 1)} />}
       {(dbAlerts || liveAlerts.length > 0) && (
         <div className="max-h-[420px] space-y-2 overflow-y-auto scrollbar-thin pr-1">

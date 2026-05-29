@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Zap } from "lucide-react";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { useBinanceWhaleStream } from "@/hooks/useBinanceWhaleStream";
 import { fmtUSD } from "@/lib/whale/format";
 import { cn } from "@/lib/utils";
@@ -32,7 +33,7 @@ export function PriorityAlertTicker() {
       }));
     if (top.length === 0) {
       return [
-        { id: "boot", tone: "warn", icon: "warn", text: "Awaiting whale flow from Binance stream…" },
+        { id: "boot", tone: "warn", icon: "warn", text: "" },
       ];
     }
     return top;
@@ -52,6 +53,10 @@ export function PriorityAlertTicker() {
       : current.tone === "bear"
         ? "border-bear/40 bg-bear/5 text-bear"
         : "border-[var(--neon-yellow)]/40 bg-[var(--neon-yellow)]/5 text-[var(--neon-yellow)]";
+
+  if (!current.text) {
+    return <SkeletonLoader variant="ticker" />;
+  }
 
   return (
     <div

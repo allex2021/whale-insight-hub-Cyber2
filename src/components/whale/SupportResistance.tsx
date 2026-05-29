@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Panel, Chip } from "./Panel";
-import { LoadingState, ErrorState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState } from "./StateView";
 import { cn } from "@/lib/utils";
 
 const ASSETS = ["BTC", "ETH", "SOL", "LTC", "BNB", "XRP", "ADA", "DOGE", "AVAX"] as const;
@@ -189,7 +190,7 @@ export function SupportResistance() {
         </div>
       }
     >
-      {isLoading && !data && <LoadingState label="Computing S/R levels…" />}
+      {isLoading && !data && <SkeletonLoader variant="cards" rows={6} />}
       {error && !data && <ErrorState error={String(error)} onRetry={() => refetch()} />}
       {data && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">

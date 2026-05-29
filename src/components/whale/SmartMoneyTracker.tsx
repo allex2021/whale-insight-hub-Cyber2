@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Star, Copy, Trash2, ExternalLink, TrendingUp, TrendingDown, X } from "lucide-react";
 import { Panel, Chip, Bar } from "./Panel";
-import { LoadingState, ErrorState, EmptyState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState, EmptyState } from "./StateView";
 import { fetchHyperliquidWhales, type WhalePosition } from "@/lib/whale/hyperliquid.functions";
 import { useFollowedWallets, useCopySignals, type CopySignal } from "@/hooks/useFollowedWallets";
 import { fmtUSD, fmtPrice, fmtPct, timeAgo } from "@/lib/whale/format";
@@ -63,7 +64,7 @@ export function SmartMoneyTracker() {
         accent="purple"
         action={action}
       >
-        {isLoading && !data && <LoadingState />}
+        {isLoading && !data && <SkeletonLoader variant="table" rows={8} />}
         {error && <ErrorState error={String((error as Error).message)} onRetry={() => refetch()} />}
 
         {tab === "signals" && (

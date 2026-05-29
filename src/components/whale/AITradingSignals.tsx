@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Panel, Chip } from "./Panel";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { timeAgo, fmtPrice } from "@/lib/whale/format";
 import { generateAISignal, fetchLatestSignals } from "@/lib/whale/ai.functions";
 import { useBinanceWhaleStream, useBinancePriceStream } from "@/hooks/useBinanceWhaleStream";
@@ -114,10 +115,7 @@ export function AITradingSignals() {
       }
     >
       {isLoading && signals.length === 0 && (
-        <div className="py-10 text-center text-sm text-muted-foreground">
-          <RefreshCw className="mx-auto h-5 w-5 animate-spin" />
-          <div className="mt-2">Loading AI signals…</div>
-        </div>
+        <SkeletonLoader variant="cards" rows={3} />
       )}
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">

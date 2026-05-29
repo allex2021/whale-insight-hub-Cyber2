@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Coins, TrendingDown, TrendingUp } from "lucide-react";
 import { Panel, Chip } from "./Panel";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { cn } from "@/lib/utils";
 
 type Coin = { id: string; symbol: string; name: string; market_cap: number; market_cap_change_percentage_24h: number; image: string };
@@ -46,7 +47,7 @@ export function StablecoinSupply() {
       }
     >
       {isLoading || !data ? (
-        <div className="py-8 text-center text-xs text-muted-foreground">Loading stablecoin data…</div>
+        <SkeletonLoader variant="default" rows={5} />
       ) : (
         <>
           <div className="mb-3 flex items-baseline justify-between gap-3 border-b border-border pb-3">

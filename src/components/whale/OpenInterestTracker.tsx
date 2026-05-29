@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Panel, Chip } from "./Panel";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { Activity, RefreshCw } from "lucide-react";
 import { useSymbolFilter, type SymbolKey } from "@/hooks/useSymbolFilter";
 import { cn } from "@/lib/utils";
@@ -94,10 +95,7 @@ export function OpenInterestTracker() {
       }
     >
       {isLoading && !data ? (
-        <div className="py-8 text-center text-xs text-muted-foreground">
-          <Activity className="mx-auto h-5 w-5 animate-pulse" />
-          <div className="mt-2">Loading OI…</div>
-        </div>
+        <SkeletonLoader variant="cards" rows={selected.length || 3} />
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {data?.map((r) => {

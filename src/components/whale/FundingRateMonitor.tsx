@@ -4,7 +4,8 @@ import { Panel, Chip } from "./Panel";
 import { fmtPct } from "@/lib/whale/format";
 import { useAsync } from "@/lib/whale/useAsync";
 import { fetchFunding } from "@/lib/whale/services";
-import { ErrorState, LoadingState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState } from "./StateView";
 
 export function FundingRateMonitor() {
   const fetcher = useMemo(() => (s: AbortSignal) => fetchFunding(s), []);
@@ -12,7 +13,7 @@ export function FundingRateMonitor() {
 
   return (
     <Panel title="Funding Rate Monitor" subtitle="Live Binance · Bybit · OKX perpetuals" accent="blue">
-      {loading && !rows && <LoadingState label="Fetching funding rates…" />}
+      {loading && !rows && <SkeletonLoader variant="default" rows={4} />}
       {error && !rows && <ErrorState error={error} onRetry={retry} />}
       {rows && (
         <div className="space-y-2">

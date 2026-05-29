@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Panel, Chip } from "./Panel";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronDown, ChevronUp, RefreshCw, AlertTriangle, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -262,7 +263,7 @@ function LiveRefreshIndicator({ lastUpdate }: { lastUpdate: number | null }) {
     return () => clearInterval(id);
   }, []);
   if (!lastUpdate) {
-    return <span className="font-mono text-[10px] text-muted-foreground">loading…</span>;
+    return <SkeletonLoader variant="ticker" />;
   }
   const elapsed = Math.max(0, Math.floor((now - lastUpdate) / 1000));
   const nextIn = Math.max(0, Math.ceil((REFRESH_INTERVAL_MS - (now - lastUpdate)) / 1000));
@@ -526,7 +527,7 @@ export function ConfluenceScore() {
         </div>
       )}
       {current.loading && !current.result && (
-        <div className="h-[180px] animate-pulse rounded-md bg-secondary/30" />
+        <SkeletonLoader variant="gauge" />
       )}
     </Panel>
   );

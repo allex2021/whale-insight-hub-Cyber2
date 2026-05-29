@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Panel, Chip } from "./Panel";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { Activity, RefreshCw } from "lucide-react";
 import { useSymbolFilter, type SymbolKey } from "@/hooks/useSymbolFilter";
 import { cn } from "@/lib/utils";

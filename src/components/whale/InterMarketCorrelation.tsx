@@ -3,7 +3,8 @@ import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 import { Panel, Chip } from "./Panel";
 import { useAsync } from "@/lib/whale/useAsync";
 import { fetchCorrelation } from "@/lib/whale/services";
-import { ErrorState, LoadingState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState } from "./StateView";
 
 export function InterMarketCorrelation() {
   const fetcher = useMemo(() => (s: AbortSignal) => fetchCorrelation(s), []);

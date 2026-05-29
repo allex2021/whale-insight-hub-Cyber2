@@ -4,7 +4,8 @@ import { fmtUSD } from "@/lib/whale/format";
 import { RadialBar, RadialBarChart, ResponsiveContainer, PolarAngleAxis } from "recharts";
 import { useAsync } from "@/lib/whale/useAsync";
 import { fetchOptions } from "@/lib/whale/services";
-import { ErrorState, LoadingState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState } from "./StateView";
 
 export function OptionsFlow() {
   const [cur, setCur] = useState<"BTC" | "ETH">("BTC");

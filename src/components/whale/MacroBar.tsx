@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Globe, TrendingDown, TrendingUp } from "lucide-react";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { cn } from "@/lib/utils";
 
 type Global = {

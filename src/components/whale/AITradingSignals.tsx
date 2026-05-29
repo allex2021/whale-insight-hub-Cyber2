@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Panel, Chip } from "./Panel";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { timeAgo, fmtPrice } from "@/lib/whale/format";
 import { generateAISignal, fetchLatestSignals } from "@/lib/whale/ai.functions";
 import { useBinanceWhaleStream, useBinancePriceStream } from "@/hooks/useBinanceWhaleStream";

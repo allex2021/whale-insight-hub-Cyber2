@@ -5,7 +5,8 @@ import { fmtUSD, fmtPct } from "@/lib/whale/format";
 import { useAsync } from "@/lib/whale/useAsync";
 import { fetchLiqHeatmap, type LiqRange } from "@/lib/whale/services";
 import type { Symbol } from "@/lib/whale/types";
-import { ErrorState, LoadingState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState } from "./StateView";
 
 const SYMBOLS: Symbol[] = ["BTC", "ETH", "SOL"];
 const RANGES: LiqRange[] = ["1H", "4H", "12H", "24H"];

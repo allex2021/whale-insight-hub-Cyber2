@@ -263,7 +263,7 @@ function LiveRefreshIndicator({ lastUpdate }: { lastUpdate: number | null }) {
     return () => clearInterval(id);
   }, []);
   if (!lastUpdate) {
-    return <span className="font-mono text-[10px] text-muted-foreground">loading…</span>;
+    return <SkeletonLoader variant="ticker" />;
   }
   const elapsed = Math.max(0, Math.floor((now - lastUpdate) / 1000));
   const nextIn = Math.max(0, Math.ceil((REFRESH_INTERVAL_MS - (now - lastUpdate)) / 1000));

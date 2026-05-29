@@ -6,7 +6,8 @@ import { fmtPct, fmtUSD } from "@/lib/whale/format";
 import { useAsync } from "@/lib/whale/useAsync";
 import { fetchExchangeSignalsServer } from "@/lib/whale/market.functions";
 import { fetchCcxtAggregate } from "@/lib/whale/ccxt.functions";
-import { ErrorState, LoadingState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState } from "./StateView";
 
 export function CrossExchangeSignal() {
   const [sym, setSym] = useState<Symbol>("BTC");
@@ -36,7 +37,7 @@ export function CrossExchangeSignal() {
         </div>
       }
     >
-      {loading && !rows && <LoadingState />}
+      {loading && !rows && <SkeletonLoader variant="table" rows={5} />}
       {error && !rows && <ErrorState error={error} onRetry={retry} />}
       {rows && (
         <>

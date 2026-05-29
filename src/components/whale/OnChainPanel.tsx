@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Activity, TrendingDown, TrendingUp, Layers, Cpu, Clock, Pickaxe } from "lucide-react";
 import { Panel } from "./Panel";
-import { LoadingState, ErrorState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState } from "./StateView";
 import { cn } from "@/lib/utils";
 import { fetchBtcNetwork, fetchBtcFeesPools } from "@/lib/whale/onchain.functions";
 
@@ -78,7 +79,7 @@ export function OnChainPanel() {
       subtitle="BTC network + fees + pools · DeFi TVL · DEX (DefiLlama + blockchain.com + mempool.space)"
       accent="purple"
     >
-      {isLoading && !data && <LoadingState label="Fetching on-chain data…" />}
+      {isLoading && !data && <SkeletonLoader variant="default" rows={6} />}
       {error && !data && <ErrorState error={String(error)} onRetry={() => refetch()} />}
       {data && (
         <div className="space-y-4">

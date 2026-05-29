@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowDownRight, ArrowUpRight, Radio, Volume2, VolumeX } from "lucide-react";
 import { Panel } from "./Panel";
 import { SkeletonLoader } from "./SkeletonLoader";
+import { EmptyState } from "./StateView";
 import { type WhaleTrade, type WhaleAsset } from "@/hooks/useBinanceWhaleStream";
 import { useMultiExchangeWhaleStream } from "@/hooks/useMultiExchangeWhaleStream";
 import { EXCHANGE_META, type ExchangeId } from "@/lib/whale/multiExchangeStream";

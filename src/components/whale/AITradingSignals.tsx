@@ -115,10 +115,7 @@ export function AITradingSignals() {
       }
     >
       {isLoading && signals.length === 0 && (
-        <div className="py-10 text-center text-sm text-muted-foreground">
-          <RefreshCw className="mx-auto h-5 w-5 animate-spin" />
-          <div className="mt-2">Loading AI signals…</div>
-        </div>
+        <SkeletonLoader variant="cards" rows={3} />
       )}
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">

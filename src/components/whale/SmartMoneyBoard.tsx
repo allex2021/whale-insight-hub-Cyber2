@@ -63,7 +63,7 @@ export function SmartMoneyBoard() {
 
   return (
     <Panel title="Smart Money Scoreboard" subtitle="Aggregated from live whale_trades (Binance WS)" accent="purple">
-      {loading && !rows && <LoadingState />}
+      {loading && !rows && <SkeletonLoader variant="table" rows={8} />}
       {error && <ErrorState error={error} onRetry={() => setTick((t) => t + 1)} />}
       {rows && rows.length === 0 && <EmptyState label="Waiting for whale trades to land…" />}
       {rows && rows.length > 0 && (

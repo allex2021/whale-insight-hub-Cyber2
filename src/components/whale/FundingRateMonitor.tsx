@@ -13,7 +13,7 @@ export function FundingRateMonitor() {
 
   return (
     <Panel title="Funding Rate Monitor" subtitle="Live Binance · Bybit · OKX perpetuals" accent="blue">
-      {loading && !rows && <LoadingState label="Fetching funding rates…" />}
+      {loading && !rows && <SkeletonLoader variant="default" rows={4} />}
       {error && !rows && <ErrorState error={error} onRetry={retry} />}
       {rows && (
         <div className="space-y-2">

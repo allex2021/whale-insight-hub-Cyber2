@@ -152,7 +152,7 @@ export function WhaleDivergence() {
         </>
       }
     >
-      {loading && !rows && <LoadingState />}
+      {loading && !rows && <SkeletonLoader variant="default" rows={6} />}
       {error && <ErrorState error={error} onRetry={() => setTick((t) => t + 1)} />}
       {rows && rows.every((r) => r.whaleVol === 0) && (
         <EmptyState label="Waiting for whale trades to compute divergence…" />

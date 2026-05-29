@@ -95,7 +95,7 @@ export function MultiTimeframeTA() {
       </div>
 
       {/* MTF table */}
-      {!ta.data && <LoadingState label="Computing indicators…" />}
+      {!ta.data && <SkeletonLoader variant="table" rows={4} />}
       {ta.data && (
         <>
           <div className="mb-2 flex items-center justify-between">

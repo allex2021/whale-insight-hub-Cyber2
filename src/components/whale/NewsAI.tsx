@@ -99,7 +99,7 @@ export function NewsAI() {
         </div>
       }
     >
-      {loading && !items && <LoadingState label="Analyzing news with AI…" />}
+      {loading && !items && <SkeletonLoader variant="list" rows={6} />}
       {error && !items && <ErrorState error={error} onRetry={retry} />}
       {items && (
         <>

@@ -64,7 +64,7 @@ export function SmartMoneyTracker() {
         accent="purple"
         action={action}
       >
-        {isLoading && !data && <LoadingState />}
+        {isLoading && !data && <SkeletonLoader variant="table" rows={8} />}
         {error && <ErrorState error={String((error as Error).message)} onRetry={() => refetch()} />}
 
         {tab === "signals" && (

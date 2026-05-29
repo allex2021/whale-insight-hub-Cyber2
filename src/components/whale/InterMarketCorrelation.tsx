@@ -12,7 +12,7 @@ export function InterMarketCorrelation() {
 
   return (
     <Panel title="Inter-Market Correlation" subtitle="BTC vs ETH · Gold · LINK · ETH/BTC (14d, Pearson)" accent="blue">
-      {loading && !data && <LoadingState label="Computing 14d correlations…" />}
+      {loading && !data && <SkeletonLoader variant="cards" rows={4} />}
       {error && !data && <ErrorState error={error} onRetry={retry} />}
       {data && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">

@@ -164,7 +164,7 @@ export function DeribitOptionsPanel() {
       subtitle="Real institutional options · BTC & ETH · Put/Call ratio · top strikes by OI"
       accent="purple"
     >
-      {isLoading && !data && <LoadingState label="Loading Deribit options book…" />}
+      {isLoading && !data && <SkeletonLoader variant="cards" rows={2} />}
       {error && !data && <ErrorState error={String(error)} onRetry={() => refetch()} />}
       {data && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

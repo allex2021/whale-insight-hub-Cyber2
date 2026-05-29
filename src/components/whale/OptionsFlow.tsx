@@ -36,7 +36,7 @@ export function OptionsFlow() {
         </div>
       }
     >
-      {loading && !trades && <LoadingState label="Fetching Deribit trades…" />}
+      {loading && !trades && <SkeletonLoader variant="default" rows={4} />}
       {error && !trades && <ErrorState error={error} onRetry={retry} />}
       {trades && (
         <>

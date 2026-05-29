@@ -76,7 +76,7 @@ export function LiquidationHeatmap() {
         </div>
       </div>
 
-      {loading && !data && <LoadingState label="Computing liquidation zones…" />}
+      {loading && !data && <SkeletonLoader variant="default" rows={5} />}
       {error && !data && <ErrorState error={error} onRetry={retry} />}
       {data && (
         <>

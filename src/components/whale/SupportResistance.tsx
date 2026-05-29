@@ -190,7 +190,7 @@ export function SupportResistance() {
         </div>
       }
     >
-      {isLoading && !data && <LoadingState label="Computing S/R levels…" />}
+      {isLoading && !data && <SkeletonLoader variant="cards" rows={6} />}
       {error && !data && <ErrorState error={String(error)} onRetry={() => refetch()} />}
       {data && (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">

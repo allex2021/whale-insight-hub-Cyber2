@@ -172,7 +172,7 @@ export function AlertCenter() {
           </div>
         </div>
       )}
-      {loading && !dbAlerts && liveAlerts.length === 0 && <LoadingState />}
+      {loading && !dbAlerts && liveAlerts.length === 0 && <SkeletonLoader variant="list" rows={6} />}
       {error && <ErrorState error={error} onRetry={() => setTick((t) => t + 1)} />}
       {(dbAlerts || liveAlerts.length > 0) && (
         <div className="max-h-[420px] space-y-2 overflow-y-auto scrollbar-thin pr-1">

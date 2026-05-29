@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Coins, TrendingDown, TrendingUp } from "lucide-react";
 import { Panel, Chip } from "./Panel";
+import { SkeletonLoader } from "./SkeletonLoader";
 import { cn } from "@/lib/utils";
 
 type Coin = { id: string; symbol: string; name: string; market_cap: number; market_cap_change_percentage_24h: number; image: string };

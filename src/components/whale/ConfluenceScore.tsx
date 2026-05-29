@@ -527,7 +527,7 @@ export function ConfluenceScore() {
         </div>
       )}
       {current.loading && !current.result && (
-        <div className="h-[180px] animate-pulse rounded-md bg-secondary/30" />
+        <SkeletonLoader variant="gauge" />
       )}
     </Panel>
   );

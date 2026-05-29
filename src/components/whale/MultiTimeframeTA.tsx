@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Panel, Chip } from "./Panel";
-import { LoadingState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
 import type { Symbol } from "@/lib/whale/types";
 import { fetchFearGreed, fetchMultiTfTA } from "@/lib/whale/ta.functions";
 

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Panel, Chip } from "./Panel";
 import { supabase } from "@/integrations/supabase/client";
-import { ErrorState, EmptyState, LoadingState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState, EmptyState } from "./StateView";
 import { TrendingUp, TrendingDown, AlertTriangle, RefreshCw } from "lucide-react";
 
 type TF = "1h" | "4h" | "24h";

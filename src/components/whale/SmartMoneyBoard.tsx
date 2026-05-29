@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Panel, Chip, Bar } from "./Panel";
 import { fmtUSD } from "@/lib/whale/format";
 import { supabase } from "@/integrations/supabase/client";
-import { ErrorState, EmptyState, LoadingState } from "./StateView";
+import { SkeletonLoader } from "./SkeletonLoader";
+import { ErrorState, EmptyState } from "./StateView";
 
 interface Row {
   alias: string;

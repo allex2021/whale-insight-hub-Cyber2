@@ -8,6 +8,7 @@ import { useBinancePriceStream } from "@/hooks/useBinanceWhaleStream";
 import { fmtPct, fmtUSD } from "@/lib/whale/format";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { AnimatedNumber } from "./AnimatedNumber";
 
 function fgColor(v: number) {
   if (v >= 75) return "text-bull";

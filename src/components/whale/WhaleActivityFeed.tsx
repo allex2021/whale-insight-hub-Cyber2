@@ -79,6 +79,7 @@ export function WhaleActivityFeed() {
   const { selected } = useSymbolFilter();
   const { speakTrade, muted, toggleMuted } = useWhaleAlertSound();
   const seenIds = useRef<Set<string>>(new Set());
+  const [newRowIds, setNewRowIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -97,16 +98,41 @@ export function WhaleActivityFeed() {
     return Array.from(map.values()).sort((a, b) => b.tradeTime - a.tradeTime).slice(0, 200);
   }, [liveTrades, seedTrades]);
 
-  // Play buy/sell sound on new live trades only (skip backfill on first mount)
+  // Play buy/sell sound + toast on new live trades only (skip backfill on first mount)
   useEffect(() => {
     if (!liveTrades.length) return;
     const isFirst = seenIds.current.size === 0;
+    const freshIds: string[] = [];
     for (const t of liveTrades) {
       if (seenIds.current.has(t.id)) continue;
       seenIds.current.add(t.id);
       if (isFirst) continue;
+      freshIds.push(t.id);
       // speakTrade auto-falls back to beep when voice is disabled
       speakTrade(t.side as "BUY" | "SELL", t.asset, t.sizeUsd);
+      const isBuy = t.side === "BUY";
+      const dir = isBuy ? "LONG" : "SHORT";
+      const arrow = isBuy ? "▲" : "▼";
+      const fn = isBuy ? toast.success : toast.error;
+      fn(`${arrow} ${t.asset} ${dir} · ${fmtUsd(t.sizeUsd)}`, {
+        description: `${EXCHANGE_META[t.exchange]?.label ?? t.exchange} @ $${t.price.toLocaleString("en-US", { maximumFractionDigits: 2 })}`,
+      });
+    }
+    if (freshIds.length) {
+      setNewRowIds((prev) => {
+        const next = new Set(prev);
+        for (const id of freshIds) next.add(id);
+        return next;
+      });
+      // Clear the "new" marker after the animation completes
+      setTimeout(() => {
+        setNewRowIds((prev) => {
+          if (prev.size === 0) return prev;
+          const next = new Set(prev);
+          for (const id of freshIds) next.delete(id);
+          return next;
+        });
+      }, 1300);
     }
     if (seenIds.current.size > 800) {
       seenIds.current = new Set(liveTrades.map((t) => t.id));

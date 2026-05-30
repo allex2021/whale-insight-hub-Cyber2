@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDownRight, ArrowUpRight, Radio, Volume2, VolumeX } from "lucide-react";
+import { toast } from "sonner";
 import { Panel } from "./Panel";
 import { SkeletonLoader } from "./SkeletonLoader";
 import { EmptyState } from "./StateView";

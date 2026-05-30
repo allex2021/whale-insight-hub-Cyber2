@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Panel, Chip } from "./Panel";
 import { SkeletonLoader } from "./SkeletonLoader";
+import { AnimatedNumber } from "./AnimatedNumber";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronDown, ChevronUp, RefreshCw, AlertTriangle, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -248,7 +249,7 @@ const AssetButton = memo(function AssetButton({ asset, score, selected, onSelect
     >
       {asset}
       {score !== undefined && (
-        <span className="font-mono" style={{ color: gaugeColor(score) }}>{score}</span>
+        <AnimatedNumber value={score} duration={400} className="font-mono" style={{ color: gaugeColor(score) }} />
       )}
     </button>
   );
@@ -475,7 +476,7 @@ export function ConfluenceScore() {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="font-mono text-4xl font-bold tabular-nums" style={{ color }}>{score}</div>
+              <AnimatedNumber value={score} duration={400} className="font-mono text-4xl font-bold" style={{ color }} />
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">/ 100</div>
             </div>
           </div>

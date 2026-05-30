@@ -8,6 +8,7 @@ import { useBinancePriceStream } from "@/hooks/useBinanceWhaleStream";
 import { fmtPct, fmtUSD } from "@/lib/whale/format";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { AnimatedNumber } from "./AnimatedNumber";
 
 function fgColor(v: number) {
   if (v >= 75) return "text-bull";
@@ -67,9 +68,16 @@ export function HeaderBar() {
             return (
               <div key={sym} className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-2.5 py-1.5">
                 <span className="text-[10px] sm:text-xs text-muted-foreground">{sym}</span>
-                <span className="font-semibold">
-                  {p ? `$${p.price.toLocaleString("en-US", { maximumFractionDigits: 2 })}` : "—"}
-                </span>
+                {p ? (
+                  <AnimatedNumber
+                    value={p.price}
+                    duration={400}
+                    format={(n) => `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`}
+                    className="font-semibold"
+                  />
+                ) : (
+                  <span className="font-semibold">—</span>
+                )}
                 {p && (
                   <span className={p.change24h >= 0 ? "text-bull text-[10px] sm:text-xs" : "text-bear text-[10px] sm:text-xs"}>
                     {fmtPct(p.change24h)}

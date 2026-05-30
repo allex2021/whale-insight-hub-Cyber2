@@ -353,7 +353,7 @@ export function WhaleActivityFeed() {
                   intent.intent === "internal_transfer" ? "border-border bg-secondary/60 text-muted-foreground" :
                   "border-border bg-secondary/40 text-muted-foreground";
                 return (
-                <tr key={t.id} className="border-b border-border/40 hover:bg-card-hover">
+                <tr key={t.id} className={cn("border-b border-border/40 hover:bg-card-hover", newRowIds.has(t.id) && "whale-row-new")}>
                   <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">{ago(t.tradeTime)} ago</td>
                   <td className="px-2 py-2">
                     <span

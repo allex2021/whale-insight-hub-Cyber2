@@ -476,7 +476,7 @@ export function ConfluenceScore() {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="font-mono text-4xl font-bold tabular-nums" style={{ color }}>{score}</div>
+              <AnimatedNumber value={score} duration={400} className="font-mono text-4xl font-bold" style={{ color }} />
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">/ 100</div>
             </div>
           </div>

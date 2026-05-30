@@ -3,6 +3,7 @@ import { Scale, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Panel, Chip } from "./Panel";
 import { SkeletonLoader } from "./SkeletonLoader";
+import { AnimatedNumber } from "./AnimatedNumber";
 import { cn } from "@/lib/utils";
 import { useSymbolFilter, type SymbolKey } from "@/hooks/useSymbolFilter";
 

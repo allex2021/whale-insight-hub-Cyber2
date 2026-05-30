@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Panel, Chip } from "./Panel";
 import { SkeletonLoader } from "./SkeletonLoader";
+import { AnimatedNumber } from "./AnimatedNumber";
 import { supabase } from "@/integrations/supabase/client";
 import { ChevronDown, ChevronUp, RefreshCw, AlertTriangle, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";

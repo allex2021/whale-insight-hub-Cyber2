@@ -144,6 +144,19 @@
     100% { background-position: -100% 0; }
   }
 
+  /* Whale row slide-in + ripple on new trades */
+  .whale-row-new {
+    animation: whale-row-in 0.5s ease-out, whale-row-ripple 1.2s ease-out;
+  }
+  @keyframes whale-row-in {
+    0% { opacity: 0; transform: translateX(24px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes whale-row-ripple {
+    0% { box-shadow: inset 3px 0 0 0 color-mix(in oklab, var(--neon-purple) 70%, transparent); background: color-mix(in oklab, var(--neon-purple) 14%, transparent); }
+    100% { box-shadow: inset 3px 0 0 0 transparent; background: transparent; }
+  }
+
   .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
   .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
 }

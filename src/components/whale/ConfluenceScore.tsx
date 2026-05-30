@@ -249,7 +249,7 @@ const AssetButton = memo(function AssetButton({ asset, score, selected, onSelect
     >
       {asset}
       {score !== undefined && (
-        <span className="font-mono" style={{ color: gaugeColor(score) }}>{score}</span>
+        <AnimatedNumber value={score} duration={400} className="font-mono" style={{ color: gaugeColor(score) }} />
       )}
     </button>
   );

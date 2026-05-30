@@ -102,9 +102,9 @@ export function LongShortRatio() {
                 </div>
 
                 <div className="mb-1.5 flex items-center justify-between font-mono text-[11px]">
-                  <span className="text-bull font-semibold">L {r.longPct.toFixed(1)}%</span>
-                  <span className="text-muted-foreground">{r.ratio.toFixed(3)}x</span>
-                  <span className="text-bear font-semibold">S {r.shortPct.toFixed(1)}%</span>
+                  <AnimatedNumber value={r.longPct} duration={400} decimals={1} prefix="L " suffix="%" className="text-bull font-semibold" />
+                  <AnimatedNumber value={r.ratio} duration={400} decimals={3} suffix="x" className="text-muted-foreground" />
+                  <AnimatedNumber value={r.shortPct} duration={400} decimals={1} prefix="S " suffix="%" className="text-bear font-semibold" />
                 </div>
 
                 <div className="flex h-2 w-full overflow-hidden rounded-full bg-secondary">

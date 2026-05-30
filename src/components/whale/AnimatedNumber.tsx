@@ -34,17 +34,17 @@ export function AnimatedNumber({
   const startRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
   const prevTargetRef = useRef(value);
+  const flashTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const target = value;
     const prev = prevTargetRef.current;
     if (target === prev) return;
 
-    if (flash && Number.isFinite(prev) && Number.isFinite(target) && prev !== target) {
+    if (flash && Number.isFinite(prev) && Number.isFinite(target)) {
       setFlashDir(target > prev ? "up" : "down");
-      const id = window.setTimeout(() => setFlashDir(null), 500);
-      // overwrite below in cleanup if needed
-      var flashTimeout: number | null = id;
+      if (flashTimerRef.current !== null) clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = window.setTimeout(() => setFlashDir(null), 500);
     }
 
     fromRef.current = display;
@@ -55,8 +55,7 @@ export function AnimatedNumber({
       if (startRef.current === null) startRef.current = ts;
       const elapsed = ts - startRef.current;
       const t = Math.min(1, elapsed / duration);
-      // ease-out cubic
-      const eased = 1 - Math.pow(1 - t, 3);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
       const next = fromRef.current + (target - fromRef.current) * eased;
       setDisplay(next);
       if (t < 1) {
@@ -72,11 +71,15 @@ export function AnimatedNumber({
 
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-      // @ts-expect-error flashTimeout may exist in this closure
-      if (typeof flashTimeout === "number") clearTimeout(flashTimeout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, duration, flash]);
+
+  useEffect(() => {
+    return () => {
+      if (flashTimerRef.current !== null) clearTimeout(flashTimerRef.current);
+    };
+  }, []);
 
   const text = format
     ? format(display)

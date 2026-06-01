@@ -93,8 +93,8 @@ function Dashboard() {
         <MacroBar />
         <SymbolFilter />
 
-        <Tabs defaultValue="live" className="space-y-4">
-          <TabsList className="inline-flex h-9 w-auto gap-1 rounded-lg border border-border bg-card/50 p-1 backdrop-blur-sm">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof TABS[number]["v"]) } className="space-y-4">
+          <TabsList className="hidden md:inline-flex h-9 w-auto gap-1 rounded-lg border border-border bg-card/50 p-1 backdrop-blur-sm">
             {TABS.map((t) => (
               <TabsTrigger
                 key={t.v}

@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy } from "react";
+import { lazy, useState } from "react";
+import { Activity, TrendingUp, Flame, Brain, Bell } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { HeaderBar } from "@/components/whale/HeaderBar";
 import { MacroBar } from "@/components/whale/MacroBar";
 import { SymbolFilter } from "@/components/whale/SymbolFilter";

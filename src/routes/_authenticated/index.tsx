@@ -66,18 +66,19 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 const TABS = [
-  { v: "live", label: "Live" },
-  { v: "derivs", label: "Derivatives" },
-  { v: "heatmap", label: "Heatmap" },
-  { v: "ai", label: "AI" },
-  { v: "macro", label: "Macro & Alerts" },
+  { v: "live", label: "Live", short: "Live", Icon: Activity },
+  { v: "derivs", label: "Derivatives", short: "Derivs", Icon: TrendingUp },
+  { v: "heatmap", label: "Heatmap", short: "Heatmap", Icon: Flame },
+  { v: "ai", label: "AI", short: "AI", Icon: Brain },
+  { v: "macro", label: "Macro & Alerts", short: "Alerts", Icon: Bell },
 ] as const;
 
 function Dashboard() {
+  const [tab, setTab] = useState<typeof TABS[number]["v"]>("live");
   return (
     <div className="min-h-screen text-foreground">
       <HeaderBar />
-      <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-6 lg:px-8">
+      <main className="mx-auto max-w-[1600px] space-y-4 px-3 sm:px-4 py-4 sm:py-6 lg:px-8 pb-24 md:pb-6">
         <PriorityAlertTicker />
         <div className="rounded-xl border-2 border-[var(--neon-purple)]/60 bg-gradient-to-br from-[var(--neon-purple)]/10 to-[var(--neon-blue)]/5 p-1 shadow-[0_0_40px_rgba(168,85,247,0.3)]">
           <SignalErrorBoundary label="Master Signal">

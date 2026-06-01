@@ -178,7 +178,7 @@ function Dashboard() {
                 type="button"
                 onClick={() => setTab(t.v)}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold tracking-wide uppercase transition-colors",
+                  "relative flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold tracking-wide uppercase transition-colors",
                   active
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground/80",

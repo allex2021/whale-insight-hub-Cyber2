@@ -135,7 +135,7 @@ function Dashboard() {
           </TabsContent>
 
           <TabsContent value="heatmap" className="space-y-4 mt-4">
-            <LazyMount minHeight={520}><LiquidationHeatmap /></LazyMount>
+            <div className="-mx-3 sm:mx-0 overflow-x-auto md:overflow-visible"><div className="min-w-[720px] md:min-w-0 px-3 sm:px-0"><LazyMount minHeight={520}><LiquidationHeatmap /></LazyMount></div></div>
           </TabsContent>
 
 

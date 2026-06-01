@@ -163,6 +163,43 @@ function Dashboard() {
           <div className="mt-1 opacity-60">Live: Binance WebSocket · CoinGecko · Alternative.me · Deribit · DefiLlama · AI via Lovable Gateway (Gemini)</div>
         </footer>
       </main>
+
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/95 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.4)]"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="grid grid-cols-5">
+          {TABS.map((t) => {
+            const active = tab === t.v;
+            const Icon = t.Icon;
+            return (
+              <button
+                key={t.v}
+                type="button"
+                onClick={() => setTab(t.v)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold tracking-wide uppercase transition-colors",
+                  active
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground/80",
+                )}
+              >
+                <Icon
+                  size={20}
+                  className={cn(
+                    "transition-all",
+                    active && "text-[var(--neon-purple)] drop-shadow-[0_0_6px_rgba(168,85,247,0.6)]",
+                  )}
+                />
+                <span>{t.short}</span>
+                {active && (
+                  <span className="absolute top-0 h-0.5 w-8 rounded-b bg-[var(--neon-purple)] shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

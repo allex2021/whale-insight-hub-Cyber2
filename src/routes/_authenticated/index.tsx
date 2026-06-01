@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy } from "react";
+import { lazy, useState } from "react";
+import { Activity, TrendingUp, Flame, Brain, Bell } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { HeaderBar } from "@/components/whale/HeaderBar";
 import { MacroBar } from "@/components/whale/MacroBar";
 import { SymbolFilter } from "@/components/whale/SymbolFilter";
@@ -64,18 +66,19 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 const TABS = [
-  { v: "live", label: "Live" },
-  { v: "derivs", label: "Derivatives" },
-  { v: "heatmap", label: "Heatmap" },
-  { v: "ai", label: "AI" },
-  { v: "macro", label: "Macro & Alerts" },
+  { v: "live", label: "Live", short: "Live", Icon: Activity },
+  { v: "derivs", label: "Derivatives", short: "Derivs", Icon: TrendingUp },
+  { v: "heatmap", label: "Heatmap", short: "Heatmap", Icon: Flame },
+  { v: "ai", label: "AI", short: "AI", Icon: Brain },
+  { v: "macro", label: "Macro & Alerts", short: "Alerts", Icon: Bell },
 ] as const;
 
 function Dashboard() {
+  const [tab, setTab] = useState<typeof TABS[number]["v"]>("live");
   return (
     <div className="min-h-screen text-foreground">
       <HeaderBar />
-      <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-6 lg:px-8">
+      <main className="mx-auto max-w-[1600px] space-y-4 px-3 sm:px-4 py-4 sm:py-6 lg:px-8 pb-24 md:pb-6">
         <PriorityAlertTicker />
         <div className="rounded-xl border-2 border-[var(--neon-purple)]/60 bg-gradient-to-br from-[var(--neon-purple)]/10 to-[var(--neon-blue)]/5 p-1 shadow-[0_0_40px_rgba(168,85,247,0.3)]">
           <SignalErrorBoundary label="Master Signal">
@@ -90,8 +93,8 @@ function Dashboard() {
         <MacroBar />
         <SymbolFilter />
 
-        <Tabs defaultValue="live" className="space-y-4">
-          <TabsList className="inline-flex h-9 w-auto gap-1 rounded-lg border border-border bg-card/50 p-1 backdrop-blur-sm">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof TABS[number]["v"]) } className="space-y-4">
+          <TabsList className="hidden md:inline-flex h-9 w-auto gap-1 rounded-lg border border-border bg-card/50 p-1 backdrop-blur-sm">
             {TABS.map((t) => (
               <TabsTrigger
                 key={t.v}
@@ -104,7 +107,7 @@ function Dashboard() {
           </TabsList>
 
           <TabsContent value="live" className="space-y-4 mt-4">
-            <WhaleActivityFeed />
+            <div className="-mx-3 sm:mx-0 overflow-x-auto md:overflow-visible"><div className="min-w-[640px] md:min-w-0 px-3 sm:px-0"><WhaleActivityFeed /></div></div>
             <WhaleTracker />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <LazyMount minHeight={360}><SmartMoneyBoard /></LazyMount>
@@ -132,7 +135,7 @@ function Dashboard() {
           </TabsContent>
 
           <TabsContent value="heatmap" className="space-y-4 mt-4">
-            <LazyMount minHeight={520}><LiquidationHeatmap /></LazyMount>
+            <div className="-mx-3 sm:mx-0 overflow-x-auto md:overflow-visible"><div className="min-w-[720px] md:min-w-0 px-3 sm:px-0"><LazyMount minHeight={520}><LiquidationHeatmap /></LazyMount></div></div>
           </TabsContent>
 
 
@@ -160,6 +163,43 @@ function Dashboard() {
           <div className="mt-1 opacity-60">Live: Binance WebSocket · CoinGecko · Alternative.me · Deribit · DefiLlama · AI via Lovable Gateway (Gemini)</div>
         </footer>
       </main>
+
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/95 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.4)]"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="grid grid-cols-5">
+          {TABS.map((t) => {
+            const active = tab === t.v;
+            const Icon = t.Icon;
+            return (
+              <button
+                key={t.v}
+                type="button"
+                onClick={() => setTab(t.v)}
+                className={cn(
+                  "relative flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold tracking-wide uppercase transition-colors",
+                  active
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground/80",
+                )}
+              >
+                <Icon
+                  size={20}
+                  className={cn(
+                    "transition-all",
+                    active && "text-[var(--neon-purple)] drop-shadow-[0_0_6px_rgba(168,85,247,0.6)]",
+                  )}
+                />
+                <span>{t.short}</span>
+                {active && (
+                  <span className="absolute top-0 h-0.5 w-8 rounded-b bg-[var(--neon-purple)] shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

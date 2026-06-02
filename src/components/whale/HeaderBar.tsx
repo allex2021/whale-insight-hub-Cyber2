@@ -114,3 +114,53 @@ export function HeaderBar() {
     </header>
   );
 }
+
+type PriceData = { price: number; change24h: number } | undefined;
+
+function PriceChip({ sym, p }: { sym: string; p: PriceData }) {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const prevRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!p) return;
+    if (prevRef.current !== null && prevRef.current !== p.price) {
+      const el = wrapRef.current;
+      if (el && typeof el.animate === "function") {
+        el.animate(
+          [
+            { transform: "translateY(8px)", opacity: 0.35, filter: "drop-shadow(0 0 6px var(--neon-blue))" },
+            { transform: "translateY(0)", opacity: 1, filter: "drop-shadow(0 0 10px var(--neon-blue))", offset: 0.6 },
+            { transform: "translateY(0)", opacity: 1, filter: "drop-shadow(0 0 0 transparent)" },
+          ],
+          { duration: 400, easing: "ease-out" },
+        );
+      }
+    }
+    prevRef.current = p.price;
+  }, [p?.price]);
+
+  return (
+    <div
+      ref={wrapRef}
+      className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-2.5 py-1.5"
+    >
+      <span className="text-[10px] sm:text-xs text-muted-foreground">{sym}</span>
+      {p ? (
+        <AnimatedNumber
+          value={p.price}
+          duration={400}
+          format={(n) => `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`}
+          className="font-semibold"
+        />
+      ) : (
+        <span className="font-semibold">—</span>
+      )}
+      {p && (
+        <span className={p.change24h >= 0 ? "text-bull text-[10px] sm:text-xs" : "text-bear text-[10px] sm:text-xs"}>
+          {fmtPct(p.change24h)}
+        </span>
+      )}
+    </div>
+  );
+}
+

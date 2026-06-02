@@ -65,8 +65,11 @@ export function ParticleField({
         const alpha = p.a * (0.65 + 0.35 * Math.sin(p.tw));
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(180, 200, 255, ${alpha.toFixed(3)})`;
+        ctx.fillStyle = `rgba(0, 255, 255, ${(alpha * 0.55).toFixed(3)})`;
+        ctx.shadowColor = "rgba(0, 255, 255, 0.7)";
+        ctx.shadowBlur = 4;
         ctx.fill();
+        ctx.shadowBlur = 0;
       }
       raf = requestAnimationFrame(tick);
     };
@@ -83,7 +86,7 @@ export function ParticleField({
       ref={canvasRef}
       aria-hidden
       className={`pointer-events-none fixed inset-0 -z-10 ${className}`}
-      style={{ opacity: 0.55 }}
+      style={{ opacity: 0.4 }}
     />
   );
 }

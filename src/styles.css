@@ -159,4 +159,72 @@
 
   .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
   .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+  /* ===== Master Signal: cyan glow + animated gradient border ===== */
+  .master-signal-glow {
+    position: relative;
+    box-shadow:
+      0 0 24px color-mix(in oklab, var(--neon-blue) 35%, transparent),
+      0 0 48px color-mix(in oklab, var(--neon-purple) 18%, transparent);
+    animation: master-glow-pulse 4s ease-in-out infinite;
+  }
+  @keyframes master-glow-pulse {
+    0%, 100% {
+      box-shadow:
+        0 0 22px color-mix(in oklab, var(--neon-blue) 30%, transparent),
+        0 0 44px color-mix(in oklab, var(--neon-purple) 16%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 34px color-mix(in oklab, var(--neon-blue) 50%, transparent),
+        0 0 64px color-mix(in oklab, var(--neon-purple) 28%, transparent);
+    }
+  }
+  /* Cycling cyan -> purple -> cyan gradient border via mask trick */
+  .master-signal-glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: conic-gradient(
+      from 0deg,
+      var(--neon-blue),
+      var(--neon-purple),
+      var(--neon-blue),
+      var(--neon-purple),
+      var(--neon-blue)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    animation: master-border-spin 6s linear infinite;
+  }
+  @keyframes master-border-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Mega whale trade ($1M+) — pulsing red glow on the row */
+  .whale-row-mega {
+    background: color-mix(in oklab, var(--bear) 10%, transparent) !important;
+    animation: whale-row-mega-pulse 2s ease-in-out infinite;
+  }
+  @keyframes whale-row-mega-pulse {
+    0%, 100% { box-shadow: inset 3px 0 0 0 var(--bear), 0 0 14px color-mix(in oklab, var(--bear) 28%, transparent); }
+    50%      { box-shadow: inset 3px 0 0 0 var(--bear), 0 0 28px color-mix(in oklab, var(--bear) 55%, transparent); }
+  }
+
+  /* Header price ticker: slide-up + neon glow when value changes */
+  .price-slide-up {
+    animation: price-slide-up 0.4s ease-out;
+  }
+  @keyframes price-slide-up {
+    0%   { transform: translateY(8px); opacity: 0.35; filter: drop-shadow(0 0 6px var(--neon-blue)); }
+    60%  { filter: drop-shadow(0 0 10px var(--neon-blue)); }
+    100% { transform: translateY(0); opacity: 1; filter: drop-shadow(0 0 0 transparent); }
+  }
 }
+

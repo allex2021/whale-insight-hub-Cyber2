@@ -117,7 +117,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ParticleField count={90} />
+      <ParticleField count={50} />
       <Outlet />
       <Toaster position="bottom-right" duration={4000} richColors closeButton />
     </QueryClientProvider>

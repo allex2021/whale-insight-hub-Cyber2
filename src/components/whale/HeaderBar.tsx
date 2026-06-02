@@ -63,29 +63,9 @@ export function HeaderBar() {
         </div>
 
         <div className="flex flex-1 flex-wrap items-center gap-2 lg:gap-4 font-mono text-xs sm:text-sm">
-          {symbols.map((sym) => {
-            const p = prices[sym];
-            return (
-              <div key={sym} className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-2.5 py-1.5">
-                <span className="text-[10px] sm:text-xs text-muted-foreground">{sym}</span>
-                {p ? (
-                  <AnimatedNumber
-                    value={p.price}
-                    duration={400}
-                    format={(n) => `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`}
-                    className="font-semibold"
-                  />
-                ) : (
-                  <span className="font-semibold">—</span>
-                )}
-                {p && (
-                  <span className={p.change24h >= 0 ? "text-bull text-[10px] sm:text-xs" : "text-bear text-[10px] sm:text-xs"}>
-                    {fmtPct(p.change24h)}
-                  </span>
-                )}
-              </div>
-            );
-          })}
+          {symbols.map((sym) => (
+            <PriceChip key={sym} sym={sym} p={prices[sym]} />
+          ))}
         </div>
 
         <div className="flex items-center gap-3 font-mono text-xs flex-wrap">

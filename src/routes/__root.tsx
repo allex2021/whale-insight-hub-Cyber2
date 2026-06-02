@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
+import { ParticleField } from "@/components/whale/ParticleField";
 
 import appCss from "../styles.css?url";
 
@@ -116,6 +117,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ParticleField count={90} />
       <Outlet />
       <Toaster position="bottom-right" duration={4000} richColors closeButton />
     </QueryClientProvider>

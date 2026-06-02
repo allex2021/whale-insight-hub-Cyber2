@@ -239,6 +239,7 @@ export function MasterSignal() {
       title="Master Signal"
       subtitle="Unified trade call · Confluence + Whales + Derivs + Sentiment · auto-fires at ≥80% conviction"
       accent="purple"
+      className="master-signal-glow"
       action={
         <>
           <div className="flex gap-0.5 rounded-md border border-border bg-secondary/40 p-0.5">

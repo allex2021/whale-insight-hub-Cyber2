@@ -479,54 +479,53 @@ function TargetsCard({
   const lev = suggestLeverage(confidence);
 
   return (
-    <div className="rounded-xl border border-border bg-secondary/20 p-3 space-y-2.5">
+    <div className="rounded-lg border border-border bg-secondary/20 p-2 space-y-1.5">
       {/* Mode chip */}
       <div className="flex items-center justify-between">
         <span className={cn(
-          "rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
+          "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider",
           isSpot ? "bg-[var(--neon-blue)]/20 text-[var(--neon-blue)]" : "bg-[var(--neon-purple)]/20 text-[var(--neon-purple)]",
         )}>
           {mode}
         </span>
-        <span className="text-[10px] text-muted-foreground">
-          {isSpot ? "No leverage · cash position" : `Suggested leverage: ${lev}x isolated`}
+        <span className="text-[9px] text-muted-foreground">
+          {isSpot ? "No leverage · cash" : `Lev: ${lev}x`}
         </span>
       </div>
 
       {/* Top: BUY price + Capital + horizon */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className={cn("flex items-center justify-center rounded-md py-2 text-sm font-bold tracking-wide", sideClass)}>
+      <div className="grid grid-cols-2 gap-1.5">
+        <div className={cn("flex items-center justify-center rounded-md py-1 text-xs font-bold tracking-wide", sideClass)}>
           {sideLabel}: {fmtPrice(entry)}
         </div>
-        <div className="flex items-center justify-center rounded-md bg-[var(--neon-orange)]/30 py-2 text-sm font-semibold text-[var(--neon-orange)]">
-          {isSpot ? "Capital: 5%" : "Capital: 2%"} · {spotHorizon}
+        <div className="flex items-center justify-center rounded-md bg-[var(--neon-orange)]/30 py-1 text-xs font-semibold text-[var(--neon-orange)]">
+          {isSpot ? "Cap: 5%" : "Cap: 2%"} · {spotHorizon}
         </div>
       </div>
 
-
       {/* Targets */}
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         {targets.map((t) => (
           <div
             key={t.idx}
             className={cn(
-              "flex items-center justify-between rounded-md border px-3 py-2 text-sm",
+              "flex items-center justify-between rounded-md border px-2 py-1 text-xs",
               t.hit
                 ? "border-bull/60 bg-bull/10"
                 : "border-border bg-background/40",
             )}
           >
             <span className="font-semibold text-foreground">
-              Target 0{t.idx}
+              T0{t.idx}
             </span>
             <span className="font-mono tabular-nums text-foreground">
               {fmtPrice(t.price)}
             </span>
-            <span className="flex items-center gap-1.5 font-mono font-bold text-bull">
+            <span className="flex items-center gap-1 font-mono font-bold text-bull">
               {Math.round(t.pct * 100)}%
               {t.hit && (
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-bull text-background">
-                  <Check className="h-3 w-3" strokeWidth={3} />
+                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-bull text-background">
+                  <Check className="h-2.5 w-2.5" strokeWidth={3} />
                 </span>
               )}
             </span>
@@ -537,13 +536,13 @@ function TargetsCard({
       {/* Stoploss */}
       <div
         className={cn(
-          "flex items-center justify-center gap-2 rounded-md py-2 text-sm font-bold tracking-wide",
+          "flex items-center justify-center gap-1.5 rounded-md py-1 text-xs font-bold tracking-wide",
           stopHit ? "bg-bear text-background" : "bg-bear/80 text-background",
         )}
       >
-        STOPLOSS: {fmtPrice(stop)}
-        {stopHit && <span className="text-[10px] uppercase">· hit</span>}
-        <span className="ml-2 text-[10px] font-normal opacity-80">R:R 1 : {rr}</span>
+        SL: {fmtPrice(stop)}
+        {stopHit && <span className="text-[9px] uppercase">· hit</span>}
+        <span className="ml-1.5 text-[9px] font-normal opacity-80">1:{rr}</span>
       </div>
     </div>
   );

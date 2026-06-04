@@ -83,24 +83,55 @@ export function useBinanceWhaleStream(minUsd = 100_000, max = 100) {
   return { trades, connected };
 }
 
-/** Latest prices derived from ticker stream (shared WS). */
+const PRICE_CACHE_KEY = "wip:header-prices:v1";
+
+function loadPriceCache(): Record<string, { price: number; change24h: number }> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = sessionStorage.getItem(PRICE_CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+/** Latest prices derived from ticker stream (shared WS) + instant REST seed. */
 export function useBinancePriceStream() {
-  const [prices, setPrices] = useState<Record<string, { price: number; change24h: number }>>({});
+  const [prices, setPrices] = useState<Record<string, { price: number; change24h: number }>>(() => loadPriceCache());
   useEffect(() => {
     if (typeof window === "undefined") return;
     const targets = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "LTCUSDT"];
+
+    // Instant REST seed so prices appear immediately, before WS handshake.
+    let cancelled = false;
+    fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(targets))}`)
+      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
+      .then((arr: Array<{ symbol: string; lastPrice: string; priceChangePercent: string }>) => {
+        if (cancelled) return;
+        setPrices((prev) => {
+          const next = { ...prev };
+          for (const t of arr) {
+            const asset = ASSET_MAP[t.symbol];
+            if (!asset) continue;
+            next[asset] = { price: parseFloat(t.lastPrice), change24h: parseFloat(t.priceChangePercent) };
+          }
+          try { sessionStorage.setItem(PRICE_CACHE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+          return next;
+        });
+      })
+      .catch(() => { /* WS will fill in */ });
+
     const unsubs = targets.map((sym) =>
       subscribeBinanceStream("spot", `${sym.toLowerCase()}@ticker`, (d) => {
         const data = d as { s: string; c: string; P: string };
         const asset = ASSET_MAP[data.s];
         if (!asset) return;
-        setPrices((prev) => ({
-          ...prev,
-          [asset]: { price: parseFloat(data.c), change24h: parseFloat(data.P) },
-        }));
+        setPrices((prev) => {
+          const next = { ...prev, [asset]: { price: parseFloat(data.c), change24h: parseFloat(data.P) } };
+          try { sessionStorage.setItem(PRICE_CACHE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+          return next;
+        });
       }),
     );
-    return () => unsubs.forEach((u) => u());
+    return () => { cancelled = true; unsubs.forEach((u) => u()); };
   }, []);
   return prices;
 }

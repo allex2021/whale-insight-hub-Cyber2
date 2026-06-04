@@ -185,71 +185,7 @@ body::before {
   .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
   .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--neon-purple); border-radius: 3px; box-shadow: 0 0 6px var(--neon-purple); }
 
-  /* === Holographic card border (rotates cyan -> purple -> cyan) === */
-  .holo-card {
-    position: relative;
-    background: rgba(0, 255, 255, 0.03);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-  }
-  .holo-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: conic-gradient(from 0deg,
-      var(--neon-blue), var(--neon-purple),
-      var(--neon-blue), var(--neon-purple),
-      var(--neon-blue));
-    -webkit-mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-            mask-composite: exclude;
-    pointer-events: none;
-    opacity: 0.55;
-    animation: holo-spin 8s linear infinite;
-  }
-  .holo-card:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 0 24px color-mix(in oklab, var(--neon-blue) 35%, transparent),
-      0 8px 32px rgba(0, 0, 0, 0.55);
-  }
-  .holo-card:hover::before { opacity: 1; }
-  @keyframes holo-spin { to { transform: rotate(360deg); } }
-
-  /* Corner bracket decorations */
-  .holo-corners::after,
-  .holo-corners > .corner {
-    pointer-events: none;
-  }
-  .corner {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    border-color: var(--neon-blue);
-    filter: drop-shadow(0 0 4px var(--neon-blue));
-    opacity: 0.9;
-  }
-  .corner.tl { top: 6px;    left: 6px;    border-top: 1.5px solid; border-left: 1.5px solid; }
-  .corner.tr { top: 6px;    right: 6px;   border-top: 1.5px solid; border-right: 1.5px solid; }
-  .corner.bl { bottom: 6px; left: 6px;    border-bottom: 1.5px solid; border-left: 1.5px solid; }
-  .corner.br { bottom: 6px; right: 6px;   border-bottom: 1.5px solid; border-right: 1.5px solid; }
-
-  /* Glowing underline under panel headers */
-  .holo-underline {
-    position: relative;
-  }
-  .holo-underline::after {
-    content: "";
-    position: absolute;
-    left: 0; right: 0; bottom: -1px; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--neon-blue), var(--neon-purple), var(--neon-blue), transparent);
-    box-shadow: 0 0 8px var(--neon-blue);
-  }
+  /* Panel styles removed — holo borders stripped per request */
 
   /* === Master Signal: intense cyan glow + animated gradient border === */
   .master-signal-glow {

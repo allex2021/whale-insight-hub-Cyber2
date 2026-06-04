@@ -1,6 +1,6 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
-@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;500;700&display=swap");
+/* Fonts loaded via <link> in src/routes/__root.tsx */
 @source "../src";
 
 /* === Futuristic trading-terminal fonts === */

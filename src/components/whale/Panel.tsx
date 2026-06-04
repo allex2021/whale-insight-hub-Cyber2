@@ -19,15 +19,11 @@ export function Panel({
   };
   return (
     <section className={cn(
-      "holo-card holo-corners relative overflow-hidden rounded-xl",
+      "relative overflow-hidden rounded-xl border border-[color:var(--border)] bg-card/60 backdrop-blur-sm",
       className,
     )}>
-      <span className="corner tl" />
-      <span className="corner tr" />
-      <span className="corner bl" />
-      <span className="corner br" />
       {accent && <div className={cn("absolute left-0 top-0 h-full w-[3px] z-10", accentBar[accent])} />}
-      <header className="holo-underline flex items-start justify-between gap-3 border-b border-[color:var(--border)] px-4 py-3 relative">
+      <header className="flex items-start justify-between gap-3 border-b border-[color:var(--border)] px-4 py-3 relative">
         <div>
           <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-foreground" style={{ textShadow: "0 0 8px color-mix(in oklab, var(--neon-blue) 60%, transparent)" }}>{title}</h2>
           {subtitle && <p className="text-[11px] text-muted-foreground mt-0.5 font-mono">{subtitle}</p>}

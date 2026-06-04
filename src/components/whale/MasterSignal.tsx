@@ -295,20 +295,20 @@ export function MasterSignal() {
       )}
       {current.loading && !sig && <SkeletonLoader variant="hero" />}
       {sig && current.inputs && (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {/* Hero row */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[auto_1fr_auto]">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[auto_1fr_auto]">
             {/* Direction badge */}
             <div
-              className="flex flex-col items-center justify-center rounded-xl border-2 px-6 py-4"
+              className="flex flex-col items-center justify-center rounded-lg border-2 px-4 py-2"
               style={{ borderColor: color, backgroundColor: `color-mix(in oklab, ${color} 10%, transparent)` }}
             >
-              <div className="flex items-center gap-2 font-bold" style={{ color }}>
+              <div className="flex items-center gap-1.5 font-bold" style={{ color }}>
                 {dirIcon(sig.direction)}
-                <span className="text-2xl">{sig.direction}</span>
+                <span className="text-lg">{sig.direction}</span>
               </div>
-              <div className="mt-1 font-mono text-3xl font-bold tabular-nums" style={{ color }}>
-                {sig.confidence}<span className="text-base opacity-70">%</span>
+              <div className="mt-0.5 font-mono text-2xl font-bold tabular-nums" style={{ color }}>
+                {sig.confidence}<span className="text-sm opacity-70">%</span>
               </div>
               <div className="text-[9px] uppercase tracking-wider text-muted-foreground">conviction</div>
             </div>
@@ -325,16 +325,14 @@ export function MasterSignal() {
               confidence={sig.confidence}
             />
 
-
-
             {/* AI button */}
-            <div className="flex flex-col items-stretch justify-center gap-2">
+            <div className="flex flex-col items-stretch justify-center gap-1.5">
               <button
                 onClick={runAI}
                 disabled={aiLoading}
-                className="flex items-center justify-center gap-2 rounded-lg border border-[var(--neon-purple)]/50 bg-gradient-to-br from-[var(--neon-purple)]/20 to-[var(--neon-blue)]/10 px-4 py-3 text-xs font-bold uppercase tracking-wider text-foreground transition-all hover:from-[var(--neon-purple)]/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] disabled:opacity-60"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--neon-purple)]/50 bg-gradient-to-br from-[var(--neon-purple)]/20 to-[var(--neon-blue)]/10 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-foreground transition-all hover:from-[var(--neon-purple)]/30 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] disabled:opacity-60"
               >
-                {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                 {verdict ? "Re-analyze" : "AI Analysis"}
               </button>
               {verdict && (
@@ -350,10 +348,10 @@ export function MasterSignal() {
 
           {/* Reasons */}
           <div>
-            <div className="mb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+            <div className="mb-1 text-[9px] uppercase tracking-wider text-muted-foreground">
               Top drivers ({sig.reasons.length})
             </div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1">
               {sig.reasons.map((r, i) => (
                 <Chip key={i} tone={r.bias === "BULL" ? "bull" : r.bias === "BEAR" ? "bear" : "default"}>
                   {r.label}
@@ -369,33 +367,33 @@ export function MasterSignal() {
             </div>
           )}
           {verdict && (
-            <div className="rounded-lg border border-[var(--neon-purple)]/40 bg-[var(--neon-purple)]/5 p-3 space-y-2">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--neon-purple)]">
-                <Brain className="h-3.5 w-3.5" /> AI Strategist
+            <div className="rounded-lg border border-[var(--neon-purple)]/40 bg-[var(--neon-purple)]/5 p-2 space-y-1.5">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[var(--neon-purple)]">
+                <Brain className="h-3 w-3" /> AI Strategist
                 <span className="ml-auto font-mono text-foreground">
                   Suggested: {verdict.suggestedConfidence}%
                 </span>
               </div>
-              <p className="text-sm leading-relaxed text-foreground">{verdict.summary}</p>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <p className="text-xs leading-relaxed text-foreground">{verdict.summary}</p>
+              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                 {verdict.bullishFactors.length > 0 && (
                   <div>
-                    <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-bull">Bullish</div>
-                    <ul className="space-y-0.5 text-xs">
+                    <div className="mb-0.5 text-[9px] font-bold uppercase tracking-wider text-bull">Bullish</div>
+                    <ul className="space-y-0 text-[10px]">
                       {verdict.bullishFactors.map((f, i) => <li key={i} className="text-muted-foreground">▲ {f}</li>)}
                     </ul>
                   </div>
                 )}
                 {verdict.bearishFactors.length > 0 && (
                   <div>
-                    <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-bear">Bearish</div>
-                    <ul className="space-y-0.5 text-xs">
+                    <div className="mb-0.5 text-[9px] font-bold uppercase tracking-wider text-bear">Bearish</div>
+                    <ul className="space-y-0 text-[10px]">
                       {verdict.bearishFactors.map((f, i) => <li key={i} className="text-muted-foreground">▼ {f}</li>)}
                     </ul>
                   </div>
                 )}
               </div>
-              <div className="rounded border border-[var(--neon-orange)]/30 bg-[var(--neon-orange)]/5 px-2 py-1.5 text-[11px]">
+              <div className="rounded border border-[var(--neon-orange)]/30 bg-[var(--neon-orange)]/5 px-2 py-1 text-[10px]">
                 <span className="font-bold text-[var(--neon-orange)]">Key risk:</span>{" "}
                 <span className="text-foreground">{verdict.keyRisk}</span>
               </div>

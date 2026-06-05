@@ -41,6 +41,9 @@ const CustomAlertBuilder = lazy(() => import("@/components/whale/CustomAlertBuil
 const StrategySimulator = lazy(() => import("@/components/whale/StrategySimulator").then(m => ({ default: m.StrategySimulator })));
 const AIAssistant = lazy(() => import("@/components/whale/AIAssistant").then(m => ({ default: m.AIAssistant })));
 const ExecutionEngine = lazy(() => import("@/components/whale/ExecutionEngine").then(m => ({ default: m.ExecutionEngine })));
+const InsiderVCTracker = lazy(() => import("@/components/whale/InsiderVCTracker").then(m => ({ default: m.InsiderVCTracker })));
+const LiquidityWalls = lazy(() => import("@/components/whale/LiquidityWalls").then(m => ({ default: m.LiquidityWalls })));
+const OnChainWhaleBotFeed = lazy(() => import("@/components/whale/OnChainWhaleBotFeed").then(m => ({ default: m.OnChainWhaleBotFeed })));
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({

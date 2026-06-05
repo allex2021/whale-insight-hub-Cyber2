@@ -44,6 +44,10 @@ const ExecutionEngine = lazy(() => import("@/components/whale/ExecutionEngine").
 const InsiderVCTracker = lazy(() => import("@/components/whale/InsiderVCTracker").then(m => ({ default: m.InsiderVCTracker })));
 const LiquidityWalls = lazy(() => import("@/components/whale/LiquidityWalls").then(m => ({ default: m.LiquidityWalls })));
 const OnChainWhaleBotFeed = lazy(() => import("@/components/whale/OnChainWhaleBotFeed").then(m => ({ default: m.OnChainWhaleBotFeed })));
+const HTFTrendMatrix = lazy(() => import("@/components/whale/HTFTrendMatrix").then(m => ({ default: m.HTFTrendMatrix })));
+const VolumeProfilePOC = lazy(() => import("@/components/whale/VolumeProfilePOC").then(m => ({ default: m.VolumeProfilePOC })));
+const RangeBreakoutScanner = lazy(() => import("@/components/whale/RangeBreakoutScanner").then(m => ({ default: m.RangeBreakoutScanner })));
+const OIFundingDivergence = lazy(() => import("@/components/whale/OIFundingDivergence").then(m => ({ default: m.OIFundingDivergence })));
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -105,6 +109,8 @@ function Dashboard() {
 
           <TabsContent value="live" className="space-y-4 mt-4">
             <div className="-mx-3 sm:mx-0 overflow-x-auto md:overflow-visible"><div className="min-w-[640px] md:min-w-0 px-3 sm:px-0"><WhaleActivityFeed /></div></div>
+            <LazyMount minHeight={520}><HTFTrendMatrix /></LazyMount>
+            <LazyMount minHeight={620}><RangeBreakoutScanner /></LazyMount>
             <LazyMount minHeight={620}><InsiderVCTracker /></LazyMount>
             <LazyMount minHeight={560}><OnChainWhaleBotFeed /></LazyMount>
             <WhaleTracker />
@@ -124,6 +130,7 @@ function Dashboard() {
           </TabsContent>
 
           <TabsContent value="derivs" className="space-y-4 mt-4">
+            <LazyMount minHeight={560}><OIFundingDivergence /></LazyMount>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <LazyMount minHeight={360}><FundingRateMonitor /></LazyMount>
               <LazyMount minHeight={360}><OpenInterestTracker /></LazyMount>
@@ -135,6 +142,7 @@ function Dashboard() {
 
           <TabsContent value="heatmap" className="space-y-4 mt-4">
             <div className="-mx-3 sm:mx-0 overflow-x-auto md:overflow-visible"><div className="min-w-[720px] md:min-w-0 px-3 sm:px-0"><LazyMount minHeight={520}><LiquidationHeatmap /></LazyMount></div></div>
+            <LazyMount minHeight={720}><VolumeProfilePOC /></LazyMount>
             <LazyMount minHeight={720}><LiquidityWalls /></LazyMount>
           </TabsContent>
 

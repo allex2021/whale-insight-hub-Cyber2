@@ -105,6 +105,8 @@ function Dashboard() {
 
           <TabsContent value="live" className="space-y-4 mt-4">
             <div className="-mx-3 sm:mx-0 overflow-x-auto md:overflow-visible"><div className="min-w-[640px] md:min-w-0 px-3 sm:px-0"><WhaleActivityFeed /></div></div>
+            <LazyMount minHeight={620}><InsiderVCTracker /></LazyMount>
+            <LazyMount minHeight={560}><OnChainWhaleBotFeed /></LazyMount>
             <WhaleTracker />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <LazyMount minHeight={360}><SmartMoneyBoard /></LazyMount>
@@ -133,6 +135,7 @@ function Dashboard() {
 
           <TabsContent value="heatmap" className="space-y-4 mt-4">
             <div className="-mx-3 sm:mx-0 overflow-x-auto md:overflow-visible"><div className="min-w-[720px] md:min-w-0 px-3 sm:px-0"><LazyMount minHeight={520}><LiquidationHeatmap /></LazyMount></div></div>
+            <LazyMount minHeight={720}><LiquidityWalls /></LazyMount>
           </TabsContent>
 
 

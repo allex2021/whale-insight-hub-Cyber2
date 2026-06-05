@@ -51,15 +51,9 @@ export const Route = createFileRoute("/_authenticated/")({
       { property: "og:description", content: "Real-time whale tracking, AI signals & multi-exchange intelligence." },
     ],
     links: [
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://stream.binance.com" },
       { rel: "preconnect", href: "https://fapi.binance.com" },
       { rel: "preconnect", href: "https://api.coingecko.com" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@400;600;700&display=swap",
-      },
     ],
   }),
   component: Dashboard,

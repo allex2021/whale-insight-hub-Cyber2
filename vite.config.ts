@@ -15,9 +15,9 @@ export default defineConfig({
   vite: {
     resolve: {
       alias: {
-        "http-proxy-agent": "/dev/null",
-        "https-proxy-agent": "/dev/null",
-        "socks-proxy-agent": "/dev/null",
+        "http-proxy-agent": new URL("./src/lib/empty-shim.ts", import.meta.url).pathname,
+        "https-proxy-agent": new URL("./src/lib/empty-shim.ts", import.meta.url).pathname,
+        "socks-proxy-agent": new URL("./src/lib/empty-shim.ts", import.meta.url).pathname,
       },
     },
     optimizeDeps: {

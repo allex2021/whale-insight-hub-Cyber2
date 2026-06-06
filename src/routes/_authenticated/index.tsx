@@ -48,6 +48,7 @@ const HTFTrendMatrix = lazy(() => import("@/components/whale/HTFTrendMatrix").th
 const VolumeProfilePOC = lazy(() => import("@/components/whale/VolumeProfilePOC").then(m => ({ default: m.VolumeProfilePOC })));
 const RangeBreakoutScanner = lazy(() => import("@/components/whale/RangeBreakoutScanner").then(m => ({ default: m.RangeBreakoutScanner })));
 const OIFundingDivergence = lazy(() => import("@/components/whale/OIFundingDivergence").then(m => ({ default: m.OIFundingDivergence })));
+const WhaleShieldHedging = lazy(() => import("@/components/whale/WhaleShieldHedging").then(m => ({ default: m.WhaleShieldHedging })));
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({

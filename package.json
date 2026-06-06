@@ -3,6 +3,11 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "browser": {
+    "http-proxy-agent": false,
+    "https-proxy-agent": false,
+    "socks-proxy-agent": false
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",

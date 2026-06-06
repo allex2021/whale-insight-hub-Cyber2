@@ -12,4 +12,21 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  vite: {
+    resolve: {
+      alias: {
+        "http-proxy-agent": "/dev/null",
+        "https-proxy-agent": "/dev/null",
+        "socks-proxy-agent": "/dev/null",
+      },
+    },
+    optimizeDeps: {
+      exclude: ["ccxt"],
+    },
+    build: {
+      rollupOptions: {
+        external: ["http-proxy-agent", "https-proxy-agent", "socks-proxy-agent"],
+      },
+    },
+  },
 });

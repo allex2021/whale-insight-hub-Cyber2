@@ -17,7 +17,7 @@ export default defineConfig({
       },
     },
     optimizeDeps: {
-      exclude: ["ccxt"],
+      exclude: ["ccxt", "http-proxy-agent", "https-proxy-agent", "socks-proxy-agent"],
     },
     build: {
       rollupOptions: {

@@ -1,23 +1,25 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "http-proxy-agent": path.resolve(__dirname, "./src/lib/empty.ts"),
-      "https-proxy-agent": path.resolve(__dirname, "./src/lib/empty.ts"),
-      "socks-proxy-agent": path.resolve(__dirname, "./src/lib/empty.ts"),
-    },
+  tanstackStart: {
+    server: { entry: "server" },
   },
-  build: {
-    rollupOptions: {
-      external: [],
+  vite: {
+    resolve: {
+      alias: {
+        "http-proxy-agent": "/@fs/dev/null",
+        "https-proxy-agent": "/@fs/dev/null",
+        "socks-proxy-agent": "/@fs/dev/null",
+      },
     },
-  },
-  optimizeDeps: {
-    exclude: ["ccxt"],
+    build: {
+      rollupOptions: {
+        external: [
+          "http-proxy-agent",
+          "https-proxy-agent", 
+          "socks-proxy-agent",
+        ],
+      },
+    },
   },
 });

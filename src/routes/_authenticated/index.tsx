@@ -148,8 +148,12 @@ function Dashboard() {
             <LazyMount minHeight={720}><LiquidityWalls /></LazyMount>
           </TabsContent>
 
+          <TabsContent value="shield" className="space-y-4 mt-4">
+            <LazyMount minHeight={720}><WhaleShieldHedging /></LazyMount>
+          </TabsContent>
 
           <TabsContent value="ai" className="space-y-4 mt-4">
+
             <LazyMount minHeight={620}><AIAssistant /></LazyMount>
             <LazyMount minHeight={400}><AITradingSignals /></LazyMount>
             <LazyMount minHeight={520}><StrategySimulator /></LazyMount>

@@ -71,6 +71,7 @@ const TABS = [
   { v: "live", label: "Live", short: "Live", Icon: Activity },
   { v: "derivs", label: "Derivatives", short: "Derivs", Icon: TrendingUp },
   { v: "heatmap", label: "Heatmap", short: "Heatmap", Icon: Flame },
+  { v: "shield", label: "Shield", short: "Shield", Icon: Shield },
   { v: "ai", label: "AI", short: "AI", Icon: Brain },
   { v: "macro", label: "Macro & Alerts", short: "Alerts", Icon: Bell },
 ] as const;

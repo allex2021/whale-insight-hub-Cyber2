@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, useState } from "react";
-import { Activity, TrendingUp, Flame, Brain, Bell } from "lucide-react";
+import { Activity, TrendingUp, Flame, Brain, Bell, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HeaderBar } from "@/components/whale/HeaderBar";
 import { MacroBar } from "@/components/whale/MacroBar";
@@ -48,6 +48,7 @@ const HTFTrendMatrix = lazy(() => import("@/components/whale/HTFTrendMatrix").th
 const VolumeProfilePOC = lazy(() => import("@/components/whale/VolumeProfilePOC").then(m => ({ default: m.VolumeProfilePOC })));
 const RangeBreakoutScanner = lazy(() => import("@/components/whale/RangeBreakoutScanner").then(m => ({ default: m.RangeBreakoutScanner })));
 const OIFundingDivergence = lazy(() => import("@/components/whale/OIFundingDivergence").then(m => ({ default: m.OIFundingDivergence })));
+const WhaleShieldHedging = lazy(() => import("@/components/whale/WhaleShieldHedging").then(m => ({ default: m.WhaleShieldHedging })));
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -70,6 +71,7 @@ const TABS = [
   { v: "live", label: "Live", short: "Live", Icon: Activity },
   { v: "derivs", label: "Derivatives", short: "Derivs", Icon: TrendingUp },
   { v: "heatmap", label: "Heatmap", short: "Heatmap", Icon: Flame },
+  { v: "shield", label: "Shield", short: "Shield", Icon: Shield },
   { v: "ai", label: "AI", short: "AI", Icon: Brain },
   { v: "macro", label: "Macro & Alerts", short: "Alerts", Icon: Bell },
 ] as const;
@@ -146,8 +148,12 @@ function Dashboard() {
             <LazyMount minHeight={720}><LiquidityWalls /></LazyMount>
           </TabsContent>
 
+          <TabsContent value="shield" className="space-y-4 mt-4">
+            <LazyMount minHeight={720}><WhaleShieldHedging /></LazyMount>
+          </TabsContent>
 
           <TabsContent value="ai" className="space-y-4 mt-4">
+
             <LazyMount minHeight={620}><AIAssistant /></LazyMount>
             <LazyMount minHeight={400}><AITradingSignals /></LazyMount>
             <LazyMount minHeight={520}><StrategySimulator /></LazyMount>
@@ -176,7 +182,7 @@ function Dashboard() {
         className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/95 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.4)]"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-6">
           {TABS.map((t) => {
             const active = tab === t.v;
             const Icon = t.Icon;

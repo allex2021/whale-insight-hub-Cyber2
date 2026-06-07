@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, useState } from "react";
-import { Activity, TrendingUp, Flame, Brain, Bell, Shield, LineChart } from "lucide-react";
+import { Activity, TrendingUp, Flame, Brain, Bell, Shield, LineChart, Radio } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HeaderBar } from "@/components/whale/HeaderBar";
 import { MacroBar } from "@/components/whale/MacroBar";
@@ -50,6 +50,7 @@ const RangeBreakoutScanner = lazy(() => import("@/components/whale/RangeBreakout
 const OIFundingDivergence = lazy(() => import("@/components/whale/OIFundingDivergence").then(m => ({ default: m.OIFundingDivergence })));
 const WhaleShieldHedging = lazy(() => import("@/components/whale/WhaleShieldHedging").then(m => ({ default: m.WhaleShieldHedging })));
 const TomHougaardDashboard = lazy(() => import("@/components/whale/TomHougaardSuite").then(m => ({ default: m.TomHougaardDashboard })));
+const MarketObserverTerminal = lazy(() => import("@/components/whale/MarketObserverTerminal").then(m => ({ default: m.MarketObserverTerminal })));
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -71,6 +72,7 @@ export const Route = createFileRoute("/_authenticated/")({
 const TABS = [
   { v: "live", label: "Live", short: "Live", Icon: Activity },
   { v: "pro", label: "Pro Chart", short: "Chart", Icon: LineChart },
+  { v: "observer", label: "AI Observer", short: "Observer", Icon: Radio },
   { v: "derivs", label: "Derivatives", short: "Derivs", Icon: TrendingUp },
   { v: "heatmap", label: "Heatmap", short: "Heatmap", Icon: Flame },
   { v: "shield", label: "Shield", short: "Shield", Icon: Shield },

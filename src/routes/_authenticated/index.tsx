@@ -139,6 +139,12 @@ function Dashboard() {
             <LazyMount minHeight={760}><TomHougaardDashboard /></LazyMount>
           </TabsContent>
 
+          <TabsContent value="observer" className="space-y-4 mt-4">
+            <LazyMount minHeight={820}><MarketObserverTerminal /></LazyMount>
+          </TabsContent>
+
+
+
           <TabsContent value="derivs" className="space-y-4 mt-4">
             <LazyMount minHeight={560}><OIFundingDivergence /></LazyMount>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -190,7 +196,7 @@ function Dashboard() {
         className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/95 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.4)]"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-8">
           {TABS.map((t) => {
             const active = tab === t.v;
             const Icon = t.Icon;

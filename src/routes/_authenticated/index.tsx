@@ -133,6 +133,10 @@ function Dashboard() {
             <LazyMount minHeight={400}><MultiTimeframeTA /></LazyMount>
           </TabsContent>
 
+          <TabsContent value="pro" className="space-y-4 mt-4">
+            <LazyMount minHeight={760}><TomHougaardDashboard /></LazyMount>
+          </TabsContent>
+
           <TabsContent value="derivs" className="space-y-4 mt-4">
             <LazyMount minHeight={560}><OIFundingDivergence /></LazyMount>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

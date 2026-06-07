@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, useState } from "react";
-import { Activity, TrendingUp, Flame, Brain, Bell, Shield } from "lucide-react";
+import { Activity, TrendingUp, Flame, Brain, Bell, Shield, LineChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HeaderBar } from "@/components/whale/HeaderBar";
 import { MacroBar } from "@/components/whale/MacroBar";
@@ -49,6 +49,7 @@ const VolumeProfilePOC = lazy(() => import("@/components/whale/VolumeProfilePOC"
 const RangeBreakoutScanner = lazy(() => import("@/components/whale/RangeBreakoutScanner").then(m => ({ default: m.RangeBreakoutScanner })));
 const OIFundingDivergence = lazy(() => import("@/components/whale/OIFundingDivergence").then(m => ({ default: m.OIFundingDivergence })));
 const WhaleShieldHedging = lazy(() => import("@/components/whale/WhaleShieldHedging").then(m => ({ default: m.WhaleShieldHedging })));
+const TomHougaardDashboard = lazy(() => import("@/components/whale/TomHougaardSuite").then(m => ({ default: m.TomHougaardDashboard })));
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -69,6 +70,7 @@ export const Route = createFileRoute("/_authenticated/")({
 
 const TABS = [
   { v: "live", label: "Live", short: "Live", Icon: Activity },
+  { v: "pro", label: "Pro Chart", short: "Chart", Icon: LineChart },
   { v: "derivs", label: "Derivatives", short: "Derivs", Icon: TrendingUp },
   { v: "heatmap", label: "Heatmap", short: "Heatmap", Icon: Flame },
   { v: "shield", label: "Shield", short: "Shield", Icon: Shield },
@@ -131,6 +133,10 @@ function Dashboard() {
             <LazyMount minHeight={400}><MultiTimeframeTA /></LazyMount>
           </TabsContent>
 
+          <TabsContent value="pro" className="space-y-4 mt-4">
+            <LazyMount minHeight={760}><TomHougaardDashboard /></LazyMount>
+          </TabsContent>
+
           <TabsContent value="derivs" className="space-y-4 mt-4">
             <LazyMount minHeight={560}><OIFundingDivergence /></LazyMount>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -182,7 +188,7 @@ function Dashboard() {
         className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/95 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.4)]"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="grid grid-cols-6">
+        <div className="grid grid-cols-7">
           {TABS.map((t) => {
             const active = tab === t.v;
             const Icon = t.Icon;

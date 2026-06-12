@@ -72,6 +72,7 @@ export const Route = createFileRoute("/_authenticated/")({
 
 const TABS = [
   { v: "live", label: "Live", short: "Live", Icon: Activity },
+  { v: "elite", label: "Elite SMC", short: "Elite", Icon: Terminal },
   { v: "pro", label: "Pro Chart", short: "Chart", Icon: LineChart },
   { v: "observer", label: "AI Observer", short: "Observer", Icon: Radio },
   { v: "derivs", label: "Derivatives", short: "Derivs", Icon: TrendingUp },

@@ -69,6 +69,8 @@ function useEliteStream(symbol: AssetKey, paused: boolean) {
   const [demand, setDemand] = useState<OrderBlock[]>([]);
   const [supply, setSupply] = useState<OrderBlock[]>([]);
   const idRef = useRef(1);
+  const priceRef = useRef(price);
+  useEffect(() => { priceRef.current = price; }, [price]);
 
   // Reset on symbol change
   useEffect(() => {

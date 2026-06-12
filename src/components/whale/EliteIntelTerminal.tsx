@@ -116,7 +116,7 @@ function useEliteStream(symbol: AssetKey, paused: boolean) {
       const delay = 1500 + Math.random() * 2200;
       setTimeout(() => {
         if (cancelled) return;
-        const ev = buildEvent(meta.ticker, price);
+        const ev = buildEvent(meta.ticker, priceRef.current);
         setSweeps((arr) => [{ id: idRef.current++, ts: Date.now(), ticker: meta.ticker, ...ev }, ...arr].slice(0, 80));
         // occasionally flash an OB
         if (Math.random() < 0.25) {

@@ -137,7 +137,7 @@ function useEliteStream(symbol: AssetKey, paused: boolean) {
     };
     schedule();
     return () => { cancelled = true; };
-  }, [paused, meta.ticker, price]);
+  }, [paused, meta.ticker]);
 
   // Age OBs + occasional refresh
   useEffect(() => {

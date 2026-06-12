@@ -422,7 +422,7 @@ export function EliteIntelTerminal() {
           sweeps={sweeps}
           paused={paused}
           onTogglePause={() => setPaused((p) => !p)}
-          onClear={() => { /* parent owns nothing; instead clear via key reset */ }}
+          onClear={clearSweeps}
           hoverPause={hoverPause}
           setHoverPause={setHoverPause}
         />

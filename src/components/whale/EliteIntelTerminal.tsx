@@ -166,7 +166,8 @@ function useEliteStream(symbol: AssetKey, paused: boolean) {
   const recent = sweeps.filter((s) => Date.now() - s.ts < 60_000).length;
   const fomo = Math.min(100, Math.round((recent / 8) * 100));
 
-  return { price, sweeps, bsl, ssl, eq, zone, demand, supply, fomo, recent };
+  const clearSweeps = () => setSweeps([]);
+  return { price, sweeps, bsl, ssl, eq, zone, demand, supply, fomo, recent, clearSweeps };
 }
 
 // --- Subcomponents ------------------------------------------------------

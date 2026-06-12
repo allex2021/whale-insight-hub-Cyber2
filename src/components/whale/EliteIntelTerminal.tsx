@@ -372,7 +372,7 @@ export function EliteIntelTerminal() {
   const [paused, setPaused] = useState(false);
   const [hoverPause, setHoverPause] = useState(false);
   const effectivePause = paused || hoverPause;
-  const { price, sweeps, bsl, ssl, eq, zone, demand, supply, fomo, recent } = useEliteStream(symbol, effectivePause);
+  const { price, sweeps, bsl, ssl, eq, zone, demand, supply, fomo, recent, clearSweeps } = useEliteStream(symbol, effectivePause);
   const meta = ASSETS[symbol];
   const lastTick = sweeps[0]?.ts ?? Date.now();
 

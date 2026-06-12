@@ -147,16 +147,17 @@ function useEliteStream(symbol: AssetKey, paused: boolean) {
       setSupply((arr) => arr.map((b) => ({ ...b, ageSec: b.ageSec + 5 })));
     }, 5000);
     const refresh = setInterval(() => {
+      const p = priceRef.current;
       const mk = (dir: -1 | 1): OrderBlock => {
-        const center = price * (1 + dir * (0.006 + Math.random() * 0.018));
-        const width = price * (0.0015 + Math.random() * 0.003);
+        const center = p * (1 + dir * (0.006 + Math.random() * 0.018));
+        const width = p * (0.0015 + Math.random() * 0.003);
         return { id: idRef.current++, low: center - width, high: center + width, depth: 800_000 + Math.random() * 9_000_000, ageSec: 0, taps: 0, flash: false };
       };
       if (Math.random() < 0.5) setDemand((arr) => [mk(-1), ...arr.slice(0, 2)]);
       else setSupply((arr) => [mk(1), ...arr.slice(0, 2)]);
     }, 12000);
     return () => { clearInterval(id); clearInterval(refresh); };
-  }, [paused, price]);
+  }, [paused]);
 
   const bsl = price * (1 + bslOff);
   const ssl = price * (1 - sslOff);

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, useState } from "react";
-import { Activity, TrendingUp, Flame, Brain, Bell, Shield, LineChart, Radio, Terminal } from "lucide-react";
+import { Activity, TrendingUp, Flame, Brain, Bell, Shield, LineChart, Radio, Terminal, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HeaderBar } from "@/components/whale/HeaderBar";
 import { MacroBar } from "@/components/whale/MacroBar";
@@ -52,6 +52,7 @@ const WhaleShieldHedging = lazy(() => import("@/components/whale/WhaleShieldHedg
 const TomHougaardDashboard = lazy(() => import("@/components/whale/TomHougaardSuite").then(m => ({ default: m.TomHougaardDashboard })));
 const MarketObserverTerminal = lazy(() => import("@/components/whale/MarketObserverTerminal").then(m => ({ default: m.MarketObserverTerminal })));
 const EliteIntelTerminal = lazy(() => import("@/components/whale/EliteIntelTerminal").then(m => ({ default: m.EliteIntelTerminal })));
+const SwingSignalEngine = lazy(() => import("@/components/whale/SwingSignalEngine").then(m => ({ default: m.SwingSignalEngine })));
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -72,6 +73,7 @@ export const Route = createFileRoute("/_authenticated/")({
 
 const TABS = [
   { v: "live", label: "Live", short: "Live", Icon: Activity },
+  { v: "swing", label: "Swing Signals", short: "Swing", Icon: Zap },
   { v: "elite", label: "Elite SMC", short: "Elite", Icon: Terminal },
   { v: "pro", label: "Pro Chart", short: "Chart", Icon: LineChart },
   { v: "observer", label: "AI Observer", short: "Observer", Icon: Radio },
@@ -135,6 +137,10 @@ function Dashboard() {
             <LazyMount minHeight={320}><OrderBookWalls /></LazyMount>
             <LazyMount minHeight={400}><OnChainPanel /></LazyMount>
             <LazyMount minHeight={400}><MultiTimeframeTA /></LazyMount>
+          </TabsContent>
+
+          <TabsContent value="swing" className="space-y-4 mt-4">
+            <LazyMount minHeight={720}><SwingSignalEngine /></LazyMount>
           </TabsContent>
 
           <TabsContent value="elite" className="space-y-4 mt-4">
@@ -202,7 +208,7 @@ function Dashboard() {
         className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/95 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.4)]"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="grid grid-cols-9">
+        <div className="grid grid-cols-5">
           {TABS.map((t) => {
             const active = tab === t.v;
             const Icon = t.Icon;

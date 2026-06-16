@@ -52,6 +52,7 @@ const WhaleShieldHedging = lazy(() => import("@/components/whale/WhaleShieldHedg
 const TomHougaardDashboard = lazy(() => import("@/components/whale/TomHougaardSuite").then(m => ({ default: m.TomHougaardDashboard })));
 const MarketObserverTerminal = lazy(() => import("@/components/whale/MarketObserverTerminal").then(m => ({ default: m.MarketObserverTerminal })));
 const EliteIntelTerminal = lazy(() => import("@/components/whale/EliteIntelTerminal").then(m => ({ default: m.EliteIntelTerminal })));
+const SwingSignalEngine = lazy(() => import("@/components/whale/SwingSignalEngine").then(m => ({ default: m.SwingSignalEngine })));
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({

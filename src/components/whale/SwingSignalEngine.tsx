@@ -8,87 +8,138 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
 import {
-  Activity, Zap, TrendingUp, TrendingDown, Wifi, Radio,
-  Rocket, AlertTriangle, Hourglass, Wallet, Star, ChevronUp, ChevronDown,
+  Activity, Zap, TrendingUp, TrendingDown, Wifi,
+  Rocket, AlertTriangle, Hourglass, Wallet, Star, ChevronUp, ChevronDown, Radio,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { subscribeBinanceStream } from "@/lib/whale/binanceStream";
 
 // ─────────────────────────────────────────────────────────────
-// Types & seed data
+// Watchlist — real Binance spot symbols
+// ─────────────────────────────────────────────────────────────
+const WATCHLIST = ["SUIUSDT", "SOLUSDT", "TIAUSDT", "SEIUSDT", "INJUSDT"];
+const ANCHOR_LIST = ["BTCUSDT", "ETHUSDT"];
+
+const NAMES: Record<string, string> = {
+  SUIUSDT: "Sui",
+  SOLUSDT: "Solana",
+  TIAUSDT: "Celestia",
+  SEIUSDT: "Sei",
+  INJUSDT: "Injective",
+  BTCUSDT: "Bitcoin",
+  ETHUSDT: "Ethereum",
+};
+
+const HOLDINGS = [{ symbol: "SUIUSDT", display: "SUI", qty: 412.5, avg: 0.7598 }];
+
+// ─────────────────────────────────────────────────────────────
+// Types
 // ─────────────────────────────────────────────────────────────
 type SignalKind = "LONG" | "SHORT" | "HOLD";
 
-interface Coin {
+interface Ticker {
   symbol: string;
-  name: string;
   price: number;
   change24h: number;
-  rsi: number;
-  macd: "GOLDEN" | "BEARISH" | "NEUTRAL";
-  volBreakout: boolean;
+  high: number;
+  low: number;
   prev: number;
   flash: "up" | "down" | null;
   flashAt: number;
+  history: number[]; // recent price samples for RSI
 }
 
-const SEED: Omit<Coin, "prev" | "flash" | "flashAt">[] = [
-  { symbol: "SUI/USDT",  name: "Sui",          price: 4.218,    change24h: 18.42, rsi: 78.3, macd: "BEARISH", volBreakout: false },
-  { symbol: "SOL/USDT",  name: "Solana",       price: 248.14,   change24h: 12.07, rsi: 36.4, macd: "GOLDEN",  volBreakout: true  },
-  { symbol: "TIA/USDT",  name: "Celestia",     price: 7.842,    change24h: 9.61,  rsi: 62.1, macd: "NEUTRAL", volBreakout: false },
-  { symbol: "SEI/USDT",  name: "Sei",          price: 0.5891,   change24h: 22.84, rsi: 81.7, macd: "BEARISH", volBreakout: false },
-  { symbol: "INJ/USDT",  name: "Injective",    price: 28.46,    change24h: 7.32,  rsi: 38.9, macd: "GOLDEN",  volBreakout: true  },
-];
-
-const ANCHORS = [
-  { symbol: "BTC", name: "Bitcoin",  price: 102_847, change24h: 2.14 },
-  { symbol: "ETH", name: "Ethereum", price: 3_812,   change24h: 3.46 },
-];
-
-const HOLDINGS = [
-  { symbol: "SUI", qty: 412.50, avg: 0.7598, current: 4.218 },
-];
-
-// ─────────────────────────────────────────────────────────────
-// Signal logic
-// ─────────────────────────────────────────────────────────────
-function deriveSignal(c: Coin): { kind: SignalKind; prob: number; target: number } {
-  if (c.rsi > 75 && c.macd === "BEARISH") {
-    const prob = Math.min(95, 70 + (c.rsi - 75) * 2);
-    return { kind: "SHORT", prob: Math.round(prob), target: +(c.price * (1 - (c.rsi - 70) / 400)).toFixed(4) };
-  }
-  if (c.rsi < 40 && c.macd === "GOLDEN" && c.volBreakout) {
-    const prob = Math.min(95, 72 + (40 - c.rsi) * 1.6);
-    return { kind: "LONG", prob: Math.round(prob), target: +(c.price * (1 + (45 - c.rsi) / 250)).toFixed(4) };
-  }
-  return { kind: "HOLD", prob: 50, target: c.price };
+// Binance @ticker payload fields we use
+interface BinanceTicker {
+  s: string; // symbol
+  c: string; // close / last price
+  P: string; // price change percent
+  h: string; // high
+  l: string; // low
+  o: string; // open
 }
 
 // ─────────────────────────────────────────────────────────────
-// Live ping badge
+// Signal logic derived from REAL price data
 // ─────────────────────────────────────────────────────────────
-const LivePing = memo(function LivePing() {
-  const [ping, setPing] = useState(12);
-  useEffect(() => {
-    const id = setInterval(() => setPing(8 + Math.floor(Math.random() * 18)), 1800);
-    return () => clearInterval(id);
-  }, []);
+function rsiFromHistory(prices: number[]): number {
+  if (prices.length < 8) return 50;
+  let gains = 0, losses = 0, n = 0;
+  for (let i = 1; i < prices.length; i++) {
+    const d = prices[i] - prices[i - 1];
+    if (d > 0) gains += d; else losses -= d;
+    n++;
+  }
+  if (n === 0) return 50;
+  const avgG = gains / n;
+  const avgL = losses / n;
+  if (avgL === 0) return 100;
+  const rs = avgG / avgL;
+  return 100 - 100 / (1 + rs);
+}
+
+function ema(prices: number[], period: number): number {
+  if (prices.length === 0) return 0;
+  const k = 2 / (period + 1);
+  let e = prices[0];
+  for (let i = 1; i < prices.length; i++) e = prices[i] * k + e * (1 - k);
+  return e;
+}
+
+function macdBias(t: Ticker): "GOLDEN" | "BEARISH" | "NEUTRAL" {
+  if (t.history.length < 12) return "NEUTRAL";
+  const fast = ema(t.history, 6);
+  const slow = ema(t.history, 13);
+  const diff = (fast - slow) / slow;
+  if (diff > 0.001 && t.change24h > 0) return "GOLDEN";
+  if (diff < -0.001 && t.change24h < 0) return "BEARISH";
+  return "NEUTRAL";
+}
+
+function volBreakout(t: Ticker): boolean {
+  // proxy: price within top 20% of 24h range AND positive change
+  if (!t.high || !t.low || t.high === t.low) return false;
+  const pos = (t.price - t.low) / (t.high - t.low);
+  return pos > 0.8 && t.change24h > 0;
+}
+
+function deriveSignal(t: Ticker): { kind: SignalKind; prob: number; target: number; rsi: number } {
+  const rsi = rsiFromHistory(t.history);
+  const macd = macdBias(t);
+  if (rsi > 75 && macd === "BEARISH") {
+    const prob = Math.min(95, 70 + (rsi - 75) * 2);
+    return { kind: "SHORT", prob: Math.round(prob), target: +(t.price * (1 - (rsi - 70) / 400)).toFixed(6), rsi };
+  }
+  if (rsi < 40 && macd === "GOLDEN" && volBreakout(t)) {
+    const prob = Math.min(95, 72 + (40 - rsi) * 1.6);
+    return { kind: "LONG", prob: Math.round(prob), target: +(t.price * (1 + (45 - rsi) / 250)).toFixed(6), rsi };
+  }
+  return { kind: "HOLD", prob: 50, target: t.price, rsi };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Live ping badge (connection status)
+// ─────────────────────────────────────────────────────────────
+const LivePing = memo(function LivePing({ connected, ping }: { connected: boolean; ping: number }) {
   return (
-    <div className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/5 px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
+    <div className={cn(
+      "flex items-center gap-2 rounded-md border px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider",
+      connected
+        ? "border-emerald-500/40 bg-emerald-500/5 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+        : "border-amber-500/40 bg-amber-500/5 text-amber-400",
+    )}>
       <span className="relative flex h-2 w-2">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+        {connected && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />}
+        <span className={cn("relative inline-flex h-2 w-2 rounded-full", connected ? "bg-emerald-400" : "bg-amber-400")} />
       </span>
       <Wifi size={11} />
-      <span>WS Connected</span>
-      <span className="text-emerald-300/80">·</span>
+      <span>{connected ? "Binance WS Live" : "Connecting…"}</span>
+      <span className="opacity-60">·</span>
       <span className="tabular-nums">{ping}ms</span>
     </div>
   );
 });
 
-// ─────────────────────────────────────────────────────────────
-// Signal badge
-// ─────────────────────────────────────────────────────────────
 function SignalBadge({ kind, prob }: { kind: SignalKind; prob: number }) {
   if (kind === "SHORT") {
     return (
@@ -114,10 +165,8 @@ function SignalBadge({ kind, prob }: { kind: SignalKind; prob: number }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Flashing price cell
-// ─────────────────────────────────────────────────────────────
-function FlashPrice({ price, flash }: { price: number; flash: Coin["flash"] }) {
+function FlashPrice({ price, flash, digits }: { price: number; flash: Ticker["flash"]; digits?: number }) {
+  const d = digits ?? (price < 1 ? 4 : price < 100 ? 3 : 2);
   return (
     <span
       className={cn(
@@ -127,7 +176,7 @@ function FlashPrice({ price, flash }: { price: number; flash: Coin["flash"] }) {
         !flash && "text-foreground",
       )}
     >
-      ${price < 1 ? price.toFixed(4) : price < 100 ? price.toFixed(3) : price.toFixed(2)}
+      ${price.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d })}
     </span>
   );
 }
@@ -136,64 +185,97 @@ function FlashPrice({ price, flash }: { price: number; flash: Coin["flash"] }) {
 // Main component
 // ─────────────────────────────────────────────────────────────
 export function SwingSignalEngine() {
-  const [coins, setCoins] = useState<Coin[]>(() =>
-    SEED.map((c) => ({ ...c, prev: c.price, flash: null, flashAt: 0 })),
-  );
-  const [loading, setLoading] = useState(true);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [tickers, setTickers] = useState<Record<string, Ticker>>({});
+  const [anchors, setAnchors] = useState<Record<string, Ticker>>({});
+  const [connected, setConnected] = useState(false);
+  const [ping, setPing] = useState(0);
+  const tickCountRef = useRef(0);
+  const lastTickRef = useRef(Date.now());
 
-  // Skeleton flash
+  // Subscribe to per-symbol Binance @ticker streams
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 650);
-    return () => clearTimeout(t);
+    const handle = (target: "watch" | "anchor", sym: string) => (raw: unknown) => {
+      const d = raw as BinanceTicker;
+      const price = parseFloat(d.c);
+      const change24h = parseFloat(d.P);
+      const high = parseFloat(d.h);
+      const low = parseFloat(d.l);
+      if (!isFinite(price)) return;
+
+      // ping estimate = ms since last tick (clamped)
+      const now = Date.now();
+      const delta = now - lastTickRef.current;
+      lastTickRef.current = now;
+      tickCountRef.current++;
+      if (tickCountRef.current % 8 === 0) {
+        setPing(Math.max(5, Math.min(120, delta)));
+      }
+      if (!connected) setConnected(true);
+
+      const setter = target === "watch" ? setTickers : setAnchors;
+      setter((prev) => {
+        const existing = prev[sym];
+        const prevPrice = existing?.price ?? price;
+        const flash: Ticker["flash"] =
+          price > prevPrice ? "up" : price < prevPrice ? "down" : existing?.flash ?? null;
+        const history = existing ? [...existing.history, price].slice(-30) : [price];
+        return {
+          ...prev,
+          [sym]: { symbol: sym, price, change24h, high, low, prev: prevPrice, flash, flashAt: now, history },
+        };
+      });
+    };
+
+    const unsubs: Array<() => void> = [];
+    for (const s of WATCHLIST) {
+      unsubs.push(subscribeBinanceStream("spot", `${s.toLowerCase()}@ticker`, handle("watch", s)));
+    }
+    for (const s of ANCHOR_LIST) {
+      unsubs.push(subscribeBinanceStream("spot", `${s.toLowerCase()}@ticker`, handle("anchor", s)));
+    }
+    return () => { unsubs.forEach((u) => u()); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Simulated WS ticks
-  useEffect(() => {
-    timerRef.current = setInterval(() => {
-      setCoins((prev) =>
-        prev.map((c) => {
-          const drift = (Math.random() - 0.48) * 0.006;
-          const newPrice = +(c.price * (1 + drift)).toFixed(c.price < 1 ? 4 : 3);
-          const flash: Coin["flash"] = newPrice > c.price ? "up" : newPrice < c.price ? "down" : c.flash;
-          // mild RSI drift
-          const newRsi = Math.max(10, Math.min(92, c.rsi + (Math.random() - 0.5) * 1.4));
-          const newChange = +(c.change24h + (Math.random() - 0.5) * 0.3).toFixed(2);
-          return {
-            ...c,
-            prev: c.price,
-            price: newPrice,
-            rsi: newRsi,
-            change24h: newChange,
-            flash,
-            flashAt: Date.now(),
-          };
-        }),
-      );
-    }, 1400);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
-
-  // Clear flash highlight
+  // Clear flash highlights after a moment
   useEffect(() => {
     const id = setInterval(() => {
-      setCoins((prev) =>
-        prev.map((c) => (c.flash && Date.now() - c.flashAt > 700 ? { ...c, flash: null } : c)),
-      );
-    }, 400);
+      const now = Date.now();
+      const clear = (prev: Record<string, Ticker>) => {
+        let changed = false;
+        const next: Record<string, Ticker> = {};
+        for (const k in prev) {
+          const t = prev[k];
+          if (t.flash && now - t.flashAt > 700) { next[k] = { ...t, flash: null }; changed = true; }
+          else next[k] = t;
+        }
+        return changed ? next : prev;
+      };
+      setTickers(clear);
+      setAnchors(clear);
+    }, 350);
     return () => clearInterval(id);
   }, []);
 
+  // Sort watchlist by 24h % change (top gainers first)
+  const rows = useMemo(
+    () =>
+      WATCHLIST.map((s) => tickers[s]).filter(Boolean).sort((a, b) => b.change24h - a.change24h),
+    [tickers],
+  );
+
   const portfolio = useMemo(() => {
-    const sui = coins.find((c) => c.symbol === "SUI/USDT");
-    const suiPrice = sui?.price ?? HOLDINGS[0].current;
     const h = HOLDINGS[0];
-    const value = h.qty * suiPrice;
+    const t = tickers[h.symbol];
+    const curr = t?.price ?? h.avg;
+    const value = h.qty * curr;
     const cost = h.qty * h.avg;
     const pnl = value - cost;
     const pnlPct = (pnl / cost) * 100;
-    return { suiPrice, value, pnl, pnlPct };
-  }, [coins]);
+    return { current: curr, flash: t?.flash ?? null, value, pnl, pnlPct };
+  }, [tickers]);
+
+  const loading = rows.length === 0;
 
   return (
     <div className="space-y-4">
@@ -208,24 +290,23 @@ export function SwingSignalEngine() {
               Swing Signal Engine
             </h2>
             <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-              4H RSI + MACD Confluence · Top Gainers Scanner
+              Binance Live WS · 24h Ticker · RSI + MACD Confluence
             </p>
           </div>
         </div>
-        <LivePing />
+        <LivePing connected={connected} ping={ping} />
       </div>
 
-      {/* Layout: signals + sidebar */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_320px]">
         {/* Signals */}
         <Card className="border-border/60 bg-card/40 backdrop-blur">
           <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
             <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">
               <Radio size={12} className="text-emerald-400 animate-pulse" />
-              Top 5 Gainers · Live Signal Feed
+              Watchlist · Sorted by 24h Gain
             </div>
             <Badge variant="outline" className="font-mono text-[9px] uppercase">
-              4H Timeframe
+              Binance Spot
             </Badge>
           </div>
 
@@ -250,38 +331,39 @@ export function SwingSignalEngine() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {coins.map((c) => {
-                    const sig = deriveSignal(c);
+                  {rows.map((t) => {
+                    const sig = deriveSignal(t);
                     const isShort = sig.kind === "SHORT";
                     const isLong = sig.kind === "LONG";
+                    const pair = `${t.symbol.replace("USDT", "")}/USDT`;
                     return (
-                      <TableRow key={c.symbol} className="border-border/40 hover:bg-emerald-500/[0.03]">
+                      <TableRow key={t.symbol} className="border-border/40 hover:bg-emerald-500/[0.03]">
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="font-mono text-xs font-bold tracking-wider">{c.symbol}</span>
-                            <span className="text-[10px] text-muted-foreground">{c.name}</span>
+                            <span className="font-mono text-xs font-bold tracking-wider">{pair}</span>
+                            <span className="text-[10px] text-muted-foreground">{NAMES[t.symbol]}</span>
                           </div>
                         </TableCell>
-                        <TableCell><FlashPrice price={c.price} flash={c.flash} /></TableCell>
+                        <TableCell><FlashPrice price={t.price} flash={t.flash} /></TableCell>
                         <TableCell>
                           <span
                             className={cn(
                               "inline-flex items-center gap-0.5 font-mono text-xs font-bold tabular-nums",
-                              c.change24h >= 0 ? "text-emerald-400" : "text-red-400",
+                              t.change24h >= 0 ? "text-emerald-400" : "text-red-400",
                             )}
                           >
-                            {c.change24h >= 0 ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                            {Math.abs(c.change24h).toFixed(2)}%
+                            {t.change24h >= 0 ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                            {Math.abs(t.change24h).toFixed(2)}%
                           </span>
                         </TableCell>
                         <TableCell>
                           <span
                             className={cn(
                               "font-mono text-xs font-bold tabular-nums",
-                              c.rsi > 75 ? "text-red-400" : c.rsi < 40 ? "text-emerald-400" : "text-amber-400",
+                              sig.rsi > 75 ? "text-red-400" : sig.rsi < 40 ? "text-emerald-400" : "text-amber-400",
                             )}
                           >
-                            {c.rsi.toFixed(1)}
+                            {sig.rsi.toFixed(1)}
                           </span>
                         </TableCell>
                         <TableCell><SignalBadge kind={sig.kind} prob={sig.prob} /></TableCell>
@@ -315,7 +397,6 @@ export function SwingSignalEngine() {
 
         {/* Sidebar */}
         <div className="space-y-4">
-          {/* Portfolio */}
           <Card className="border-emerald-500/30 bg-card/40 p-4 shadow-[0_0_20px_rgba(16,185,129,0.08)]">
             <div className="mb-3 flex items-center gap-2">
               <Wallet size={14} className="text-emerald-400" />
@@ -325,7 +406,7 @@ export function SwingSignalEngine() {
             </div>
             <div className="space-y-3">
               <div>
-                <div className="text-[10px] font-mono uppercase text-muted-foreground">Total Balance</div>
+                <div className="text-[10px] font-mono uppercase text-muted-foreground">Total Value</div>
                 <div className="font-mono text-xl font-bold tabular-nums text-foreground">
                   ${portfolio.value.toFixed(2)}
                 </div>
@@ -341,8 +422,8 @@ export function SwingSignalEngine() {
                     <div className="font-mono font-bold tabular-nums">${HOLDINGS[0].avg.toFixed(4)}</div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Current</div>
-                    <FlashPrice price={portfolio.suiPrice} flash={coins[0].flash} />
+                    <div className="text-muted-foreground">Live</div>
+                    <FlashPrice price={portfolio.current} flash={portfolio.flash} digits={4} />
                   </div>
                 </div>
                 <div className="mt-2 border-t border-emerald-500/20 pt-1.5">
@@ -351,7 +432,7 @@ export function SwingSignalEngine() {
                     className={cn(
                       "font-mono text-sm font-bold tabular-nums",
                       portfolio.pnl >= 0
-                        ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.55)] animate-pulse"
+                        ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.55)]"
                         : "text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.55)]",
                     )}
                   >
@@ -362,7 +443,6 @@ export function SwingSignalEngine() {
             </div>
           </Card>
 
-          {/* Market anchors */}
           <Card className="border-border/60 bg-card/40 p-4">
             <div className="mb-3 flex items-center gap-2">
               <Star size={14} className="text-amber-400" />
@@ -371,38 +451,44 @@ export function SwingSignalEngine() {
               </span>
             </div>
             <div className="space-y-2">
-              {ANCHORS.map((a) => (
-                <div
-                  key={a.symbol}
-                  className="flex items-center justify-between rounded-md border border-border/40 bg-background/40 px-2.5 py-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <Activity size={12} className="text-muted-foreground" />
-                    <div>
-                      <div className="font-mono text-xs font-bold tracking-wider">{a.symbol}</div>
-                      <div className="text-[9px] text-muted-foreground">{a.name}</div>
+              {ANCHOR_LIST.map((s) => {
+                const a = anchors[s];
+                return (
+                  <div
+                    key={s}
+                    className="flex items-center justify-between rounded-md border border-border/40 bg-background/40 px-2.5 py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Activity size={12} className="text-muted-foreground" />
+                      <div>
+                        <div className="font-mono text-xs font-bold tracking-wider">{s.replace("USDT", "")}</div>
+                        <div className="text-[9px] text-muted-foreground">{NAMES[s]}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-mono text-xs font-bold tabular-nums">
-                      ${a.price.toLocaleString()}
-                    </div>
-                    <div
-                      className={cn(
-                        "flex items-center justify-end gap-0.5 font-mono text-[10px] font-bold",
-                        a.change24h >= 0 ? "text-emerald-400" : "text-red-400",
+                    <div className="text-right">
+                      {a ? (
+                        <>
+                          <FlashPrice price={a.price} flash={a.flash} digits={2} />
+                          <div
+                            className={cn(
+                              "flex items-center justify-end gap-0.5 font-mono text-[10px] font-bold",
+                              a.change24h >= 0 ? "text-emerald-400" : "text-red-400",
+                            )}
+                          >
+                            {a.change24h >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                            {Math.abs(a.change24h).toFixed(2)}%
+                          </div>
+                        </>
+                      ) : (
+                        <Skeleton className="h-8 w-20" />
                       )}
-                    >
-                      {a.change24h >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-                      {Math.abs(a.change24h).toFixed(2)}%
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
 
-          {/* Quick tabs */}
           <Card className="border-border/60 bg-card/40 p-3">
             <Tabs defaultValue="watch">
               <TabsList className="grid w-full grid-cols-2 bg-background/40">
@@ -410,10 +496,10 @@ export function SwingSignalEngine() {
                 <TabsTrigger value="recent" className="font-mono text-[10px] uppercase">Recent</TabsTrigger>
               </TabsList>
               <TabsContent value="watch" className="mt-2 space-y-1.5">
-                {coins.slice(0, 3).map((c) => (
-                  <div key={c.symbol} className="flex items-center justify-between rounded px-2 py-1.5 text-xs hover:bg-background/40">
-                    <span className="font-mono font-bold">{c.symbol.split("/")[0]}</span>
-                    <FlashPrice price={c.price} flash={c.flash} />
+                {rows.slice(0, 5).map((t) => (
+                  <div key={t.symbol} className="flex items-center justify-between rounded px-2 py-1.5 text-xs hover:bg-background/40">
+                    <span className="font-mono font-bold">{t.symbol.replace("USDT", "")}</span>
+                    <FlashPrice price={t.price} flash={t.flash} />
                   </div>
                 ))}
               </TabsContent>

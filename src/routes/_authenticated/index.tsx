@@ -139,6 +139,10 @@ function Dashboard() {
             <LazyMount minHeight={400}><MultiTimeframeTA /></LazyMount>
           </TabsContent>
 
+          <TabsContent value="swing" className="space-y-4 mt-4">
+            <LazyMount minHeight={720}><SwingSignalEngine /></LazyMount>
+          </TabsContent>
+
           <TabsContent value="elite" className="space-y-4 mt-4">
             <LazyMount minHeight={900}><EliteIntelTerminal /></LazyMount>
           </TabsContent>
